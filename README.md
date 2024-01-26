@@ -19,3 +19,22 @@ The Jira Worklog Manager is a specialized app designed to streamline the process
 1. **Local Data Storage:** Save user preferences and window settings locally for a personalized and consistent experience.
 
 Jira Worklog Manager is designed to be a powerful companion for anyone looking to optimize their time management and reporting within the Jira ecosystem. It simplifies the often complex task of worklog tracking, offering clarity and control over your time and project progress.
+
+# Get Started: Downloading and Using the Windows Application
+
+To begin using the Timesheet Application for Jira, download the application from the releases page.
+
+# Setup: Configuring the Application
+
+1. **API URL:** In the configuration, enter the API URL for your Jira instance. This is the base URL used to access your Jira account.
+1. **API Key:**
+To obtain an API key, log in to your Jira account.
+Navigate to "Account Settings" and select "API Tokens".
+Click on "Create API Token". Give it a name and copy the generated token.
+Paste this API key in the application's settings.
+1. **Timesheet Added Issues:** Enable this option to manually add specific issues to your timesheet, providing more control over the entries.
+1. **Timesheet JQL:** Customize the Jira Query Language (JQL) to refine the issues that appear in your timesheet. This allows for a more tailored view based on your specific needs or projects.
+1. **Tempo Worklog Period:** Set the number of past days you want to retrieve worklog entries for. This helps focus on recent activities without clutter from older entries.
+1. **Check API Connection:** Use this button to verify if the application can successfully connect to the Jira Rest API with the provided settings.
+1. **Save:** After configuring the settings, click on the 'Save' button to apply and store these configurations.
+Remember to save your settings after making changes to ensure your application is configured correctly for your specific Jira environment.

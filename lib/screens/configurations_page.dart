@@ -38,13 +38,21 @@ class _ConfigurationsPageState extends State<ConfigurationsPage> {
   _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _apiUrlController.text = prefs.getString('jiraApiUrl') ?? _jiraApiUrl;
-      _apiKeyController.text = prefs.getString('jiraApiKey') ?? _jiraApiKey;
-      _boardIdController.text = prefs.getString('jiraBoardId') ?? _jiraBoardId;
-      _timesheetAddedIssuesController.text = prefs.getString('jiraTimesheetAddedIssues') ?? _jiraTimesheetAddedIssues;
-      _timesheetJQLController.text = prefs.getString('jiraTimesheetJQL') ?? _jiraTimesheetJQL;
+      _jiraApiUrl = prefs.getString('jiraApiUrl') ?? _jiraApiUrl;
+      _jiraApiKey = prefs.getString('jiraApiKey') ?? _jiraApiKey;
+      _jiraBoardId = prefs.getString('jiraBoardId') ?? _jiraBoardId;
+      _jiraTimesheetAddedIssues = prefs.getString('jiraTimesheetAddedIssues') ?? _jiraTimesheetAddedIssues;
+      _jiraTimesheetJQL = prefs.getString('jiraTimesheetJQL') ?? _jiraTimesheetJQL;
+      _tempoWorklogsPeriod = prefs.getInt('tempoWorklogsPeriod') ?? _tempoWorklogsPeriod;
+
+      _apiUrlController.text = _jiraApiUrl;
+      _apiKeyController.text = _jiraApiKey;
+      _boardIdController.text = _jiraBoardId;
+      _timesheetAddedIssuesController.text = _jiraTimesheetAddedIssues;
+      _timesheetJQLController.text = _jiraTimesheetJQL;
+      _tempoWorklogsPeriodController.text = _tempoWorklogsPeriod.toString();
+
       _jiraJqlHasError = prefs.getBool('jiraJqlHasError') ?? false;
-      _tempoWorklogsPeriodController.text = (prefs.getInt('tempoWorklogsPeriod') ?? _tempoWorklogsPeriod).toString();
     });
   }
 

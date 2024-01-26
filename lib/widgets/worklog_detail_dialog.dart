@@ -416,7 +416,7 @@ class _WorklogDetailDialogState extends State<WorklogDetailDialog> {
             disabledForegroundColor: Colors.blueGrey.shade200,
             //foregroundColor: Colors.white,
           ),
-          icon: const Icon(Icons.plus_one),
+          icon: const Icon(Icons.add),
           label: const Text('New worklog'),
           onPressed: _isLoading ? null : () => _newWorklogEntry(),
         ),

@@ -182,7 +182,9 @@ class _TimesheetPageState extends State<TimesheetPage> {
         actions: [
           TextButton(
             onPressed: () {
-              // Add your onPressed logic here
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Not implemented.\nGo to configuration and add manually.')),
+              );
             },
             child: const Row(
               children: <Widget>[
