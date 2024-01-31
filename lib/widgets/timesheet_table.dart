@@ -29,6 +29,7 @@ class TimesheetTable extends StatefulWidget {
 
 class _TimesheetTableState extends State<TimesheetTable> {
   DateTime _currentWeekStart = DateTime.now().subtract(Duration(days: DateTime.now().weekday - 1));
+  bool _todaysWeek = true;
   bool _isLoading = false;
   final _colKeyWidth = 100.0;
   final _colDataWidth = 70.0;
@@ -235,6 +236,13 @@ class _TimesheetTableState extends State<TimesheetTable> {
     return totalWorklog;
   }
 
+  void _gotoToday() {
+    setState(() {
+      _currentWeekStart = DateTime.now().subtract(Duration(days: DateTime.now().weekday - 1));
+      _todaysWeek = true;
+    });
+  }
+
   void _moveWeek(bool next) {
     setState(() {
       if (next) {
@@ -243,6 +251,7 @@ class _TimesheetTableState extends State<TimesheetTable> {
         _currentWeekStart = _currentWeekStart.subtract(const Duration(days: 7));
       }
       _reloadIssues();
+      _todaysWeek = isDateInCurrentWeek(_currentWeekStart);
     });
   }
 
@@ -264,27 +273,61 @@ class _TimesheetTableState extends State<TimesheetTable> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          backgroundColor: Colors.blueGrey,
-                          foregroundColor: Colors.white,
+                      SizedBox(
+                        width: 26,
+                        height: 26,
+                        child: RawMaterialButton(
+                          onPressed: () => _moveWeek(false),
+                          elevation: 2.0,
+                          fillColor: Colors.blueGrey,
+                          padding: const EdgeInsets.all(00),
+                          shape: const CircleBorder(),
+                          child: const Icon(
+                            Icons.arrow_left,
+                            color: Colors.white,
+                            size: 15,
+                          ),
                         ),
-                        icon: const Icon(Icons.arrow_left),
-                        label: const Text('prev'),
-                        onPressed: () => _moveWeek(false),
                       ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        height: 26,
+                        child: TextButton(
+                          onPressed: _todaysWeek ? null : () => _gotoToday(),
+                          style: TextButton.styleFrom(
+                            backgroundColor: _todaysWeek ? Colors.blueGrey.shade100 : Colors.blueGrey,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Row(
+                            children: <Widget>[
+                              Icon(Icons.calendar_today, size: 16),
+                              SizedBox(width: 5),
+                              Text('Today', style: TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
                       Text(
                         monthName,
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                       ),
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          backgroundColor: Colors.blueGrey,
-                          foregroundColor: Colors.white,
+                      const Spacer(),
+                      SizedBox(
+                        width: 26,
+                        height: 26,
+                        child: RawMaterialButton(
+                          onPressed: () => _moveWeek(true),
+                          elevation: 2.0,
+                          fillColor: Colors.blueGrey,
+                          padding: const EdgeInsets.all(00),
+                          shape: const CircleBorder(),
+                          child: const Icon(
+                            Icons.arrow_right,
+                            color: Colors.white,
+                            size: 15,
+                          ),
                         ),
-                        icon: const Icon(Icons.arrow_right),
-                        label: const Text('next'),
-                        onPressed: () => _moveWeek(true),
                       ),
                     ],
                   ),

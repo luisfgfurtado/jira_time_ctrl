@@ -26,10 +26,15 @@ Future<Map<String, dynamic>> restoreWindowProperties() async {
   bool localStorageIsEnabled = await CustomSharedPreferences.checkIfLocalStorageIsEnabled();
   if (localStorageIsEnabled) {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    double width = prefs.getDouble('windowWidth') ?? 800; // Default width
-    double height = prefs.getDouble('windowHeight') ?? 600; // Default height
-    double posX = prefs.getDouble('windowPosX') ?? 100; // Default X position
-    double posY = prefs.getDouble('windowPosY') ?? 100; // Default Y position
+    final windowWidth = prefs.getDouble('windowWidth');
+    final windowHeight = prefs.getDouble('windowHeight');
+    final windowPosX = prefs.getDouble('windowPosX');
+    final windowPosY = prefs.getDouble('windowPosY');
+
+    double width = windowWidth ?? 800; // Default width
+    double height = windowHeight ?? 600; // Default height
+    double posX = windowPosX ?? 100; // Default X position
+    double posY = windowPosY ?? 100; // Default Y position
 
     return {'size': Size(width, height), 'position': Offset(posX, posY)};
   } else {

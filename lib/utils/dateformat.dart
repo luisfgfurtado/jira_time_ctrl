@@ -12,6 +12,30 @@ bool isToday(DateTime date, [int addDays = 0]) {
   return today.year == targetDay.year && today.month == targetDay.month && today.day == targetDay.day;
 }
 
+bool isDateInCurrentWeek(DateTime date) {
+  // Get today's date
+  DateTime today = DateTime.now();
+
+  // Calculate the first day of the current week
+  DateTime startOfWeek = today.subtract(Duration(days: today.weekday - 1));
+
+  // Calculate the last day of the current week
+  DateTime endOfWeek = startOfWeek.add(Duration(days: 6));
+
+  // Remove the time part from dates for comparison
+  DateTime normalizedDate = DateTime(date.year, date.month, date.day);
+  DateTime normalizedStart = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+  DateTime normalizedEnd = DateTime(endOfWeek.year, endOfWeek.month, endOfWeek.day);
+
+  // Check if the given date is between the start and end of the week
+  return normalizedDate.isAtLeast(normalizedStart) && normalizedDate.isAtMost(normalizedEnd);
+}
+
+extension DateTimeComparison on DateTime {
+  bool isAtLeast(DateTime other) => !this.isBefore(other);
+  bool isAtMost(DateTime other) => !this.isAfter(other);
+}
+
 String getSpentTimeFormatted(int timeSpentSeconds) {
   int hours = timeSpentSeconds ~/ 3600; // Divide by 3600 to get hours
   int minutes = (timeSpentSeconds % 3600) ~/ 60; // Get remainder of hours division, then divide by 60 to get minutes

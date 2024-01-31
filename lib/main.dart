@@ -13,8 +13,8 @@ void main() async {
 
   final windowProperties = await restoreWindowProperties();
   WindowManager.instance.setSize(windowProperties['size']);
-  WindowManager.instance.setPosition(windowProperties['position']);
-
+  //WindowManager.instance.setPosition(windowProperties['position']);
+  WindowManager.instance.center();
   runApp(const MyApp());
 }
 
