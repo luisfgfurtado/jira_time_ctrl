@@ -19,7 +19,7 @@ class _TimesheetPageState extends State<TimesheetPage> {
   late JiraApiClient _jiraApiClient;
   late TempoApiClient _tempoApiClient;
   List<Issue> _issues = [];
-  bool _isLoading = true;
+  //bool _isLoading = true;
 
   bool _showAssignedToMe = false;
   bool _showWeekend = false;
@@ -36,7 +36,7 @@ class _TimesheetPageState extends State<TimesheetPage> {
     await _loadSettings();
     await _initializeClient();
     await _loadTempoWorklogIssues();
-    setState(() => _isLoading = false);
+    //setState(() => _isLoading = false);
   }
 
   _loadSettings() async {
@@ -164,7 +164,7 @@ class _TimesheetPageState extends State<TimesheetPage> {
         if (index != -1) {
           _issues[index] = updatedIssue;
         }
-        _isLoading = false; // Set loading to false after data is loaded
+        //_isLoading = false; // Set loading to false after data is loaded
       });
     } catch (e) {
       debugPrint('Error getting issue $issueKey: $e');
@@ -201,35 +201,24 @@ class _TimesheetPageState extends State<TimesheetPage> {
               _saveSettings();
             }),
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: _buildActionSwitch(
-              label: 'Show Weekend',
-              value: _showWeekend,
-              onChanged: (value) => setState(() {
-                _showWeekend = value;
-                _saveSettings();
-              }),
-            ),
+          _buildActionSwitch(
+            label: 'Show Weekend',
+            value: _showWeekend,
+            onChanged: (value) => setState(() {
+              _showWeekend = value;
+              _saveSettings();
+            }),
           ),
+          const SizedBox(width: 20)
         ],
       ),
-      body: (_isLoading)
-          ? Positioned.fill(
-              child: Container(
-                color: Colors.black.withOpacity(0.5), // Semi-transparent overlay
-                child: const Center(
-                  child: CircularProgressIndicator(),
-                ),
-              ),
-            )
-          : TimesheetTable(
-              issues: _issues,
-              showWeekend: _showWeekend,
-              jiraApiClient: _jiraApiClient,
-              loadIssues: loadIssues, // Your existing callback
-              onUpdateIssue: updateIssue, // Your existing callback
-            ),
+      body: TimesheetTable(
+        issues: _issues,
+        showWeekend: _showWeekend,
+        jiraApiClient: _jiraApiClient,
+        loadIssues: loadIssues, // Your existing callback
+        onUpdateIssue: updateIssue, // Your existing callback
+      ),
     );
   }
 }
