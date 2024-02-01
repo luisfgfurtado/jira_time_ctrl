@@ -269,7 +269,9 @@ class _ConfigurationsPageState extends State<ConfigurationsPage> {
                 ),
               ),
               const SizedBox(height: 30),
-              Text('App name: $_appName\nPackage: $_packageName\nVersion: $_version\nBuild: $_buildNumber')
+              Text('App name: $_appName\nPackage: $_packageName\nVersion: $_version\nBuild: $_buildNumber'),
+              const SizedBox(height: 30),
+              const Text('Made by Luis Furtado')
             ],
           ),
         ),
