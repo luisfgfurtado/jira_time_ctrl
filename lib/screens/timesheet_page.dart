@@ -19,7 +19,7 @@ class _TimesheetPageState extends State<TimesheetPage> {
   late JiraApiClient _jiraApiClient;
   late TempoApiClient _tempoApiClient;
   List<Issue> _issues = [];
-  //bool _isLoading = true;
+  bool _isLoading = true;
 
   bool _showAssignedToMe = false;
   bool _showWeekend = false;
@@ -36,7 +36,7 @@ class _TimesheetPageState extends State<TimesheetPage> {
     await _loadSettings();
     await _initializeClient();
     await _loadTempoWorklogIssues();
-    //setState(() => _isLoading = false);
+    setState(() => _isLoading = false);
   }
 
   _loadSettings() async {
@@ -212,13 +212,20 @@ class _TimesheetPageState extends State<TimesheetPage> {
           const SizedBox(width: 20)
         ],
       ),
-      body: TimesheetTable(
-        issues: _issues,
-        showWeekend: _showWeekend,
-        jiraApiClient: _jiraApiClient,
-        loadIssues: loadIssues, // Your existing callback
-        onUpdateIssue: updateIssue, // Your existing callback
-      ),
+      body: _isLoading
+          ? Container(
+              color: const Color.fromARGB(255, 116, 116, 116).withOpacity(0.2), // Semi-transparent overlay
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            )
+          : TimesheetTable(
+              issues: _issues,
+              showWeekend: _showWeekend,
+              jiraApiClient: _jiraApiClient,
+              loadIssues: loadIssues, // Your existing callback
+              onUpdateIssue: updateIssue, // Your existing callback
+            ),
     );
   }
 }

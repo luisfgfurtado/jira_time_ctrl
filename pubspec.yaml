@@ -16,7 +16,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 0.1.4+20240131
 
 environment:
   sdk: ">=3.2.4 <4.0.0"
@@ -40,6 +40,7 @@ dependencies:
   url_launcher: ^6.2.3
   mask_text_input_formatter: ^2.8.0
   window_manager: ^0.3.7
+  package_info_plus: ^5.0.1
 
 dev_dependencies:
   flutter_test:
@@ -51,6 +52,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
+  msix: ^3.16.7
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -92,3 +94,13 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+msix_config:
+  display_name: Jira Time Control
+  publisher_display_name: Luis Furtado
+  identity_name: luisfurtado.jiratimectrl
+  msix_version: 1.0.0.4
+  languages: en-us
+  logo_path: windows\runner\resources\logo.png
+  capabilities: internetClient
+  app_installer: #<-- app installer configuration
+    publish_folder_path: C:\Users\luis.furtado\Documents\Projects\Flutter Jira TimeEntry App\app_installer\

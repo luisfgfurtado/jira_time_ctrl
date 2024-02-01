@@ -2,7 +2,7 @@
 
 The Jira Worklog Manager is a specialized app designed to streamline the process of monitoring and reporting worklogs directly within Jira. This app stands out as an essential tool for professionals who rely on Jira for project management and time tracking. It offers an intuitive and user-friendly interface that simplifies the task of reviewing and managing worklogs.
 
-# Key Features:
+## Key Features:
 
 1. **Efficient Worklog Viewing:** Easily view detailed worklogs for each issue, organized by week. This feature allows users to quickly assess time spent on various tasks and projects.
 
@@ -20,11 +20,11 @@ The Jira Worklog Manager is a specialized app designed to streamline the process
 
 Jira Worklog Manager is designed to be a powerful companion for anyone looking to optimize their time management and reporting within the Jira ecosystem. It simplifies the often complex task of worklog tracking, offering clarity and control over your time and project progress.
 
-# Get Started: Downloading and Using the Windows Application
+## Get Started: Downloading and Using the Windows Application
 
 To begin using the Timesheet Application for Jira, download the application from the releases page.
 
-# Setup: Configuring the Application
+## Setup: Configuring the Application
 
 1. **API URL:** In the configuration, enter the API URL for your Jira instance. This is the base URL used to access your Jira account.
 1. **API Key:**
@@ -38,3 +38,8 @@ Paste this API key in the application's settings.
 1. **Check API Connection:** Use this button to verify if the application can successfully connect to the Jira Rest API with the provided settings.
 1. **Save:** After configuring the settings, click on the 'Save' button to apply and store these configurations.
 Remember to save your settings after making changes to ensure your application is configured correctly for your specific Jira environment.
+
+## Build installer
+
+1. Check https://pub.dev/packages/msix#github-settings-icon-configuring-your-installer
+1. run ''dart run msix:publish''

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/jira_api_client.dart';
@@ -27,12 +28,32 @@ class _ConfigurationsPageState extends State<ConfigurationsPage> {
   String _jiraTimesheetJQL = '(worklogDate >= #STARTDATE# AND worklogDate <= #ENDDATE# AND worklogAuthor = currentuser())';
   int _tempoWorklogsPeriod = 21;
 
-  bool _isLoading = false;
+  late String _appName;
+  late String _packageName;
+  late String _version;
+  late String _buildNumber;
+
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadSettings();
+    _generalInit();
+  }
+
+  _generalInit() async {
+    await _loadSettings();
+    await _loadAppInfo();
+    setState(() => _isLoading = false);
+  }
+
+  _loadAppInfo() async {
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+
+    _appName = packageInfo.appName;
+    _packageName = packageInfo.packageName;
+    _version = packageInfo.version;
+    _buildNumber = packageInfo.buildNumber;
   }
 
   _loadSettings() async {
@@ -121,7 +142,6 @@ class _ConfigurationsPageState extends State<ConfigurationsPage> {
         ),
         body: Stack(
           children: [
-            _buildForm(),
             if (_isLoading)
               AbsorbPointer(
                 child: Container(
@@ -129,7 +149,9 @@ class _ConfigurationsPageState extends State<ConfigurationsPage> {
                   alignment: Alignment.center,
                   child: const CircularProgressIndicator(),
                 ),
-              ),
+              )
+            else
+              _buildForm(),
           ],
         ));
   }
@@ -246,6 +268,8 @@ class _ConfigurationsPageState extends State<ConfigurationsPage> {
                   ],
                 ),
               ),
+              const SizedBox(height: 30),
+              Text('App name: $_appName\nPackage: $_packageName\nVersion: $_version\nBuild: $_buildNumber')
             ],
           ),
         ),

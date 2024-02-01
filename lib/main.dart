@@ -12,6 +12,7 @@ void main() async {
   await WindowManager.instance.ensureInitialized();
 
   final windowProperties = await restoreWindowProperties();
+  windowManager.setTitle('Jira Time Control');
   WindowManager.instance.setSize(windowProperties['size']);
   //WindowManager.instance.setPosition(windowProperties['position']);
   WindowManager.instance.center();
