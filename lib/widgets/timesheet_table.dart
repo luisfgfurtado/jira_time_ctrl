@@ -13,6 +13,7 @@ class TimesheetTable extends StatefulWidget {
   final List<Issue> issues;
   final bool showWeekend;
   final JiraApiClient jiraApiClient;
+  final int tempoWorklogsPeriod;
 
   const TimesheetTable({
     Key? key,
@@ -21,6 +22,7 @@ class TimesheetTable extends StatefulWidget {
     required this.jiraApiClient,
     required this.loadIssues,
     required this.onUpdateIssue,
+    required this.tempoWorklogsPeriod,
   }) : super(key: key);
 
   @override
@@ -255,6 +257,11 @@ class _TimesheetTableState extends State<TimesheetTable> {
     });
   }
 
+  bool isBeforeTempoNLastDays() {
+    final DateTime threshold = DateTime.now().subtract(Duration(days: widget.tempoWorklogsPeriod));
+    return _currentWeekStart.isBefore(threshold);
+  }
+
   @override
   Widget build(BuildContext context) {
     // Get the current month's name
@@ -351,6 +358,44 @@ class _TimesheetTableState extends State<TimesheetTable> {
                     );
                   },
                 ),
+                if (isBeforeTempoNLastDays())
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(15.0),
+                        child: Row(
+                          children: <Widget>[
+                            const Icon(Icons.warning, size: 35),
+                            const SizedBox(width: 20),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('The current list of issues does not contain issues not assigned to you, even if they have hours reported by you.',
+                                      softWrap: true, overflow: TextOverflow.visible),
+                                  RichText(
+                                    text: TextSpan(
+                                      style: DefaultTextStyle.of(context).style,
+                                      children: <TextSpan>[
+                                        const TextSpan(text: 'The current configuration load issues with hours reported by you in the last'),
+                                        TextSpan(text: ' ${widget.tempoWorklogsPeriod} days', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        const TextSpan(text: '.'),
+                                      ],
+                                    ),
+                                  ),
+                                  const Text(
+                                    'This may affect the total hours of each day.',
+                                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

@@ -21,10 +21,13 @@ class TimesheetPageState extends State<TimesheetPage> {
   List<Issue> _issues = [];
   bool _isLoading = true;
 
+  int _tempoWorklogsPeriod = 14;
   bool _showAssignedToMe = false;
   bool _showWeekend = false;
   String _timesheetJQL = '';
   String _timesheetAddedIssues = '';
+  String _startDate = '';
+  String _endDate = '';
 
   @override
   void initState() {
@@ -42,6 +45,7 @@ class TimesheetPageState extends State<TimesheetPage> {
   _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
+      _tempoWorklogsPeriod = prefs.getInt('tempoWorklogsPeriod') ?? 14;
       _showAssignedToMe = prefs.getBool('showAssignedToMe') ?? false;
       _showWeekend = prefs.getBool('showWeekend') ?? false;
       _timesheetAddedIssues = prefs.getString('jiraTimesheetAddedIssues') ?? '';
@@ -112,15 +116,21 @@ class TimesheetPageState extends State<TimesheetPage> {
       });
     } catch (e) {
       //setState(() => _isLoading = false); // Set loading to false if error occurs
+      _showHelpText(e.toString());
       debugPrint(e.toString());
-      if (!mounted) return; // check ensures widget is still present in the widget tree
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
     }
   }
 
+  Future<void> _fullReloadIssues() async {
+    if (_startDate == '' || _endDate == '') return;
+    setState(() => _isLoading = true); // Set loading to true
+    await _loadTempoWorklogIssues();
+    await loadIssues(_startDate, _endDate);
+    setState(() => _isLoading = false); // Set loading to false
+  }
+
   Future<void> loadIssues(String startDate, String endDate) async {
+    debugPrint('_showAssignedToMe=$_showAssignedToMe');
     String jql = _timesheetJQL.replaceAll('#STARTDATE#', startDate).replaceAll('#ENDDATE#', endDate);
     if (_showAssignedToMe) {
       jql += ' OR (assignee=currentuser() AND status NOT IN (Done,Closed,resolved,Cancelled))';
@@ -142,16 +152,15 @@ class TimesheetPageState extends State<TimesheetPage> {
         }
       });
       setState(() {
+        _startDate = startDate;
+        _endDate = endDate;
         _issues = issues;
         //_isLoading = false; // Set loading to false after data is loaded
       });
     } catch (e) {
       //setState(() => _isLoading = false); // Set loading to false if error occurs
       debugPrint(e.toString());
-      if (!mounted) return; // check ensures widget is still present in the widget tree
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      _showHelpText(e.toString());
     }
   }
 
@@ -170,10 +179,7 @@ class TimesheetPageState extends State<TimesheetPage> {
       });
     } catch (e) {
       debugPrint('Error getting issue $issueKey: $e');
-      if (!mounted) return; // check ensures widget is still present in the widget tree
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      _showHelpText(e.toString());
     }
   }
 
@@ -185,9 +191,7 @@ class TimesheetPageState extends State<TimesheetPage> {
         actions: [
           TextButton(
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Not implemented.\nGo to configuration and add manually.')),
-              );
+              _showHelpText('Not implemented.\nGo to configuration and add manually.');
             },
             child: const Row(
               children: <Widget>[
@@ -196,11 +200,23 @@ class TimesheetPageState extends State<TimesheetPage> {
               ],
             ),
           ),
+          TextButton(
+            onPressed: () {
+              _fullReloadIssues();
+            },
+            child: const Row(
+              children: <Widget>[
+                Icon(Icons.refresh), // Change color as needed
+                Text('refresh'),
+              ],
+            ),
+          ),
           _buildActionSwitch(
             label: 'Assigned to Me',
             value: _showAssignedToMe,
             onChanged: (value) => setState(() {
               _showAssignedToMe = value;
+              _fullReloadIssues();
               _saveSettings();
             }),
           ),
@@ -228,6 +244,7 @@ class TimesheetPageState extends State<TimesheetPage> {
               jiraApiClient: _jiraApiClient,
               loadIssues: loadIssues, // Your existing callback
               onUpdateIssue: updateIssue, // Your existing callback
+              tempoWorklogsPeriod: _tempoWorklogsPeriod, //Tempo Worklog Period (last n of days)
             ),
     );
   }

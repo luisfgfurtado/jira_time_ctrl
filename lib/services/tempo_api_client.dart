@@ -29,7 +29,7 @@ class TempoApiClient {
       String? storedApiUrl = prefs.getString('jiraApiUrl');
       _apiUrl = (storedApiUrl != null && !storedApiUrl.endsWith('/')) ? '$storedApiUrl/' : storedApiUrl ?? '';
       _apiKey = prefs.getString('jiraApiKey') ?? '';
-      _tempoWorklogsPeriod = prefs.getInt('tempoWorklogsPeriod') ?? 21;
+      _tempoWorklogsPeriod = prefs.getInt('tempoWorklogsPeriod') ?? 14;
     } else {
       // Handle the scenario when local storage is not available
       throw Exception("local storage is disabled");
