@@ -130,7 +130,6 @@ class TimesheetPageState extends State<TimesheetPage> {
   }
 
   Future<void> loadIssues(String startDate, String endDate) async {
-    debugPrint('_showAssignedToMe=$_showAssignedToMe');
     String jql = _timesheetJQL.replaceAll('#STARTDATE#', startDate).replaceAll('#ENDDATE#', endDate);
     if (_showAssignedToMe) {
       jql += ' OR (assignee=currentuser() AND status NOT IN (Done,Closed,resolved,Cancelled))';

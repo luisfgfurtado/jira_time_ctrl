@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/jira_api_client.dart';
 import '../utils/custom_shared_preferences.dart';
@@ -13,6 +14,7 @@ class ConfigurationsPage extends StatefulWidget {
 }
 
 class ConfigurationsPageState extends State<ConfigurationsPage> {
+  final _sourceCodeURL = 'https://github.com/luisfgfurtado/jira_time_ctrl';
   final _formKey = GlobalKey<FormState>();
   final _apiUrlController = TextEditingController();
   final _apiKeyController = TextEditingController();
@@ -132,6 +134,21 @@ class ConfigurationsPageState extends State<ConfigurationsPage> {
         );
       },
     );
+  }
+
+  Future<void> openUrl(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        // Handle the error or show a message
+        throw "Could not launch $uri";
+      }
+    } catch (e) {
+      // Handle any exceptions
+      throw "Error: $e";
+    }
   }
 
   @override
@@ -271,7 +288,11 @@ class ConfigurationsPageState extends State<ConfigurationsPage> {
               const SizedBox(height: 30),
               Text('App name: $_appName\nPackage: $_packageName\nVersion: $_version\nBuild: $_buildNumber'),
               const SizedBox(height: 30),
-              const Text('Made by Luis Furtado')
+              const Text('Made by Luis Furtado\nCheck source code:'),
+              TextButton(
+                child: Text(_sourceCodeURL, style: const TextStyle(color: Colors.blue)),
+                onPressed: () => openUrl(_sourceCodeURL), // Use the utility function
+              ),
             ],
           ),
         ),
