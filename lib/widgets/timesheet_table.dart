@@ -228,9 +228,9 @@ class _TimesheetTableState extends State<TimesheetTable> {
 
     for (var issue in widget.issues) {
       var worklogMinutesByDay = issue.getWorklogMinutesByWeekday(_currentWeekStart);
-      totalWorklog.keys.forEach((day) {
+      for (var day in totalWorklog.keys) {
         totalWorklog[day] = totalWorklog[day]! + (worklogMinutesByDay[day] ?? 0);
-      });
+      }
     }
 
     return totalWorklog;

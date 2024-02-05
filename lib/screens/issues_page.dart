@@ -9,10 +9,10 @@ class IssuesPage extends StatefulWidget {
   const IssuesPage({Key? key}) : super(key: key);
 
   @override
-  _IssuesPageState createState() => _IssuesPageState();
+  IssuesPageState createState() => IssuesPageState();
 }
 
-class _IssuesPageState extends State<IssuesPage> {
+class IssuesPageState extends State<IssuesPage> {
   late JiraApiClient _jiraApiClient;
   List<Issue> _issues = [];
   bool _isLoading = true;
@@ -38,6 +38,7 @@ class _IssuesPageState extends State<IssuesPage> {
       });
     } catch (e) {
       debugPrint(e.toString());
+      if (!mounted) return; // check ensures widget is still present in the widget tree
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );

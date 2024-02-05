@@ -44,19 +44,19 @@ class MyApp extends StatelessWidget {
           border: OutlineInputBorder(),
         ),
       ),
-      home: const MyHomePage(),
+      home: const _MyHomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
+class _MyHomePage extends StatefulWidget {
+  const _MyHomePage();
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> with WindowListener {
+class _MyHomePageState extends State<_MyHomePage> with WindowListener {
   int _pageIndex = 1;
   final List<Widget> _pages = [
     const IssuesPage(),

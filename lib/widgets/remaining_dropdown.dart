@@ -5,10 +5,10 @@ class RemainingDropdown extends StatefulWidget {
   const RemainingDropdown({super.key, required this.onSelectionChanged});
 
   @override
-  _RemainingDropdown createState() => _RemainingDropdown();
+  RemainingDropdownState createState() => RemainingDropdownState();
 }
 
-class _RemainingDropdown extends State<RemainingDropdown> {
+class RemainingDropdownState extends State<RemainingDropdown> {
   String _currentSelection = 'auto';
   final Map<String, String> _options = {
     'new': 'sets the estimate to a specific value',

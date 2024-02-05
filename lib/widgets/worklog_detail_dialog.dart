@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+//import 'package:shared_preferences/shared_preferences.dart';
 import '../models/issue.dart';
 import '../services/jira_api_client.dart';
-import '../utils/custom_shared_preferences.dart';
+//import '../utils/custom_shared_preferences.dart';
 import '../utils/dateformat.dart';
 
 class WorklogDetailDialog extends StatefulWidget {
@@ -20,10 +20,10 @@ class WorklogDetailDialog extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _WorklogDetailDialogState createState() => _WorklogDetailDialogState();
+  WorklogDetailDialogState createState() => WorklogDetailDialogState();
 }
 
-class _WorklogDetailDialogState extends State<WorklogDetailDialog> {
+class WorklogDetailDialogState extends State<WorklogDetailDialog> {
   final _formKey = GlobalKey<FormState>();
   late MaskTextInputFormatter _timeFormatter;
   late WorklogEntry _worklogEntry;
@@ -46,25 +46,25 @@ class _WorklogDetailDialogState extends State<WorklogDetailDialog> {
     //_loadSettings();
   }
 
-  _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _worklogEntry.timeSpentSeconds = prefs.getInt('${widget.issue.key}_timeSpentSeconds') ?? 0;
-      _worklogEntry.comment = prefs.getString('${widget.issue.key}_comment') ?? '';
-    });
-  }
+  // _loadSettings() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   setState(() {
+  //     _worklogEntry.timeSpentSeconds = prefs.getInt('${widget.issue.key}_timeSpentSeconds') ?? 0;
+  //     _worklogEntry.comment = prefs.getString('${widget.issue.key}_comment') ?? '';
+  //   });
+  // }
 
-  _saveSettings() async {
-    bool localStorageIsEnabled = await CustomSharedPreferences.checkIfLocalStorageIsEnabled();
-    if (localStorageIsEnabled) {
-      final prefs = await SharedPreferences.getInstance();
-      prefs.setInt('${widget.issue.key}_timeSpentSeconds', _worklogEntry.timeSpentSeconds);
-      prefs.setString('${widget.issue.key}_comment', _worklogEntry.comment);
-    } else {
-      // Handle the scenario when local storage is not available
-      throw Exception("local storage is disabled");
-    }
-  }
+  // _saveSettings() async {
+  //   bool localStorageIsEnabled = await CustomSharedPreferences.checkIfLocalStorageIsEnabled();
+  //   if (localStorageIsEnabled) {
+  //     final prefs = await SharedPreferences.getInstance();
+  //     prefs.setInt('${widget.issue.key}_timeSpentSeconds', _worklogEntry.timeSpentSeconds);
+  //     prefs.setString('${widget.issue.key}_comment', _worklogEntry.comment);
+  //   } else {
+  //     // Handle the scenario when local storage is not available
+  //     throw Exception("local storage is disabled");
+  //   }
+  // }
 
   void _newWorklogEntry() {
     setState(() {
@@ -129,6 +129,7 @@ class _WorklogDetailDialogState extends State<WorklogDetailDialog> {
           adjustEstimate: _remainingOption,
           newEstimate: _remainingEstimate,
         );
+        if (!mounted) return; // check ensures widget is still present in the widget tree
         // Pass the updated issue object when popping the screen
         if (_worklogEntry.id == 0) {
           //add new
@@ -138,6 +139,7 @@ class _WorklogDetailDialogState extends State<WorklogDetailDialog> {
         }
       } catch (e) {
         _worklogEntry = await _reloadWorklogEntry(_worklogEntry);
+        if (!mounted) return; // check ensures widget is still present in the widget tree
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error saving worklog: $e')),
         );
@@ -152,6 +154,7 @@ class _WorklogDetailDialogState extends State<WorklogDetailDialog> {
       try {
         worklogEntry = await _reloadWorklogEntry(worklogEntry);
       } catch (e) {
+        if (!mounted) return; // check ensures widget is still present in the widget tree
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error reloading worklog entry: $e')),
         );
@@ -182,6 +185,7 @@ class _WorklogDetailDialogState extends State<WorklogDetailDialog> {
         issueKey: widget.issue.key,
         worklogId: _worklogEntry.id,
       );
+      if (!mounted) return; // check ensures widget is still present in the widget tree
       Navigator.of(context).pop({'action': 'delete', 'result': _worklogEntry.id}); // Return 'delete' when deleted
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -364,7 +368,7 @@ class _WorklogDetailDialogState extends State<WorklogDetailDialog> {
         ),
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Text(_remainingOptions[_remainingOption] ?? ''),
+          child: Text(_remainingOptions[_remainingOption] ?? '', style: const TextStyle(fontSize: 10)),
         ),
         TextFormField(
           decoration: const InputDecoration(

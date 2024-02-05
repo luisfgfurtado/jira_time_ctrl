@@ -9,10 +9,10 @@ class ConfigurationsPage extends StatefulWidget {
   const ConfigurationsPage({super.key});
 
   @override
-  _ConfigurationsPageState createState() => _ConfigurationsPageState();
+  ConfigurationsPageState createState() => ConfigurationsPageState();
 }
 
-class _ConfigurationsPageState extends State<ConfigurationsPage> {
+class ConfigurationsPageState extends State<ConfigurationsPage> {
   final _formKey = GlobalKey<FormState>();
   final _apiUrlController = TextEditingController();
   final _apiKeyController = TextEditingController();

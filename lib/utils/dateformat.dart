@@ -20,7 +20,7 @@ bool isDateInCurrentWeek(DateTime date) {
   DateTime startOfWeek = today.subtract(Duration(days: today.weekday - 1));
 
   // Calculate the last day of the current week
-  DateTime endOfWeek = startOfWeek.add(Duration(days: 6));
+  DateTime endOfWeek = startOfWeek.add(const Duration(days: 6));
 
   // Remove the time part from dates for comparison
   DateTime normalizedDate = DateTime(date.year, date.month, date.day);
@@ -32,8 +32,8 @@ bool isDateInCurrentWeek(DateTime date) {
 }
 
 extension DateTimeComparison on DateTime {
-  bool isAtLeast(DateTime other) => !this.isBefore(other);
-  bool isAtMost(DateTime other) => !this.isAfter(other);
+  bool isAtLeast(DateTime other) => !isBefore(other);
+  bool isAtMost(DateTime other) => !isAfter(other);
 }
 
 String getSpentTimeFormatted(int timeSpentSeconds) {
@@ -53,7 +53,7 @@ String formatDateTimeToHHMM(DateTime dateTime) {
 int getSecondsFromHHmm(String time) {
   List<String> parts = time.split(':');
   if (parts.length != 2) {
-    throw FormatException('Invalid time format');
+    throw const FormatException('Invalid time format');
   }
 
   int hours = int.tryParse(parts[0]) ?? 0;

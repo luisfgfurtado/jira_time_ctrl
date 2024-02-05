@@ -12,10 +12,10 @@ class TimesheetPage extends StatefulWidget {
   const TimesheetPage({super.key});
 
   @override
-  _TimesheetPageState createState() => _TimesheetPageState();
+  TimesheetPageState createState() => TimesheetPageState();
 }
 
-class _TimesheetPageState extends State<TimesheetPage> {
+class TimesheetPageState extends State<TimesheetPage> {
   late JiraApiClient _jiraApiClient;
   late TempoApiClient _tempoApiClient;
   List<Issue> _issues = [];
@@ -113,6 +113,7 @@ class _TimesheetPageState extends State<TimesheetPage> {
     } catch (e) {
       //setState(() => _isLoading = false); // Set loading to false if error occurs
       debugPrint(e.toString());
+      if (!mounted) return; // check ensures widget is still present in the widget tree
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
@@ -147,6 +148,7 @@ class _TimesheetPageState extends State<TimesheetPage> {
     } catch (e) {
       //setState(() => _isLoading = false); // Set loading to false if error occurs
       debugPrint(e.toString());
+      if (!mounted) return; // check ensures widget is still present in the widget tree
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
@@ -168,6 +170,7 @@ class _TimesheetPageState extends State<TimesheetPage> {
       });
     } catch (e) {
       debugPrint('Error getting issue $issueKey: $e');
+      if (!mounted) return; // check ensures widget is still present in the widget tree
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );

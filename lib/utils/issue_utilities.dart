@@ -10,7 +10,7 @@ Future<String> getApiUrl() async {
 Future<void> openIssueUrl(String issueKey) async {
   try {
     final apiUrl = await getApiUrl();
-    final issueUrl = Uri.parse('${apiUrl}browse/${issueKey}');
+    final issueUrl = Uri.parse('${apiUrl}browse/$issueKey');
     if (await canLaunchUrl(issueUrl)) {
       await launchUrl(issueUrl);
     } else {
