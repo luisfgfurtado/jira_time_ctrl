@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:jira_time_ctrl/widgets/main_drawer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
-import 'screens/configurations_page.dart';
+import 'screens/settings_page.dart';
 import 'screens/issues_page.dart';
 import 'screens/timesheet_page.dart';
 import 'utils/prefs.dart';
@@ -58,15 +59,19 @@ class _MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<_MyHomePage> with WindowListener {
   int _pageIndex = 1;
-  final List<Widget> _pages = [
-    const IssuesPage(),
-    const TimesheetPage(),
-    const ConfigurationsPage(),
-  ];
+  late List<Widget> _pages;
+  final List<String> _titles = ["Issues assigned to me", "Timesheet", "Settings"];
 
   @override
   void initState() {
     super.initState();
+
+    _pages = [
+      const IssuesPage(),
+      const TimesheetPage(),
+      const SettingsPage(),
+    ];
+
     windowManager.addListener(this);
     _loadSettings();
   }
@@ -84,23 +89,16 @@ class _MyHomePageState extends State<_MyHomePage> with WindowListener {
     });
   }
 
+  void _setPageIndex(int index) {
+    setState(() => _pageIndex = index);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: Text(_titles[_pageIndex])),
+      drawer: MainDrawer(pageIndex: _pageIndex, setPageIndex: _setPageIndex),
       body: _pages[_pageIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _pageIndex,
-        onTap: (index) {
-          setState(() {
-            _pageIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.bug_report), label: 'Issues'),
-          BottomNavigationBarItem(icon: Icon(Icons.timer), label: 'Timesheet'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Configurations'),
-        ],
-      ),
     );
   }
 

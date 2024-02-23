@@ -11,6 +11,7 @@ class TimesheetTable extends StatefulWidget {
   final Future<void> Function(String, String) loadIssues; // Load issues
   final Future<void> Function(String) onUpdateIssue; // Add this
   final List<Issue> issues;
+  final List<Issue> filteredIssues;
   final bool showWeekend;
   final JiraApiClient jiraApiClient;
   final int tempoWorklogsPeriod;
@@ -18,6 +19,7 @@ class TimesheetTable extends StatefulWidget {
   const TimesheetTable({
     Key? key,
     required this.issues,
+    required this.filteredIssues,
     required this.showWeekend,
     required this.jiraApiClient,
     required this.loadIssues,
@@ -88,7 +90,7 @@ class _TimesheetTableState extends State<TimesheetTable> {
 
   // Build rows dynamically, including weekend data cells conditionally
   List<DataRow> _buildRows(double colSummaryWidth) {
-    List<DataRow> rows = widget.issues.map((issue) {
+    List<DataRow> rows = widget.filteredIssues.map((issue) {
       var worklogMinutesByDay = issue.getWorklogMinutesByWeekday(_currentWeekStart);
       List<DataCell> cells = [
         DataCell(
@@ -100,7 +102,7 @@ class _TimesheetTableState extends State<TimesheetTable> {
                 issue.key,
                 style: const TextStyle(
                   color: Colors.blue, // Use a text color that indicates interactivity
-                  decoration: TextDecoration.underline,
+                  //decoration: TextDecoration.underline,
                 ),
               ),
             ),
@@ -378,7 +380,7 @@ class _TimesheetTableState extends State<TimesheetTable> {
                                     text: TextSpan(
                                       style: DefaultTextStyle.of(context).style,
                                       children: <TextSpan>[
-                                        const TextSpan(text: 'The current configuration load issues with hours reported by you in the last'),
+                                        const TextSpan(text: 'The current settings load issues with hours reported by you in the last'),
                                         TextSpan(text: ' ${widget.tempoWorklogsPeriod} days', style: const TextStyle(fontWeight: FontWeight.bold)),
                                         const TextSpan(text: '.'),
                                       ],

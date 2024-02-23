@@ -6,14 +6,14 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/jira_api_client.dart';
 import '../utils/custom_shared_preferences.dart';
 
-class ConfigurationsPage extends StatefulWidget {
-  const ConfigurationsPage({super.key});
+class SettingsPage extends StatefulWidget {
+  const SettingsPage({Key? key}) : super(key: key);
 
   @override
-  ConfigurationsPageState createState() => ConfigurationsPageState();
+  SettingsPageState createState() => SettingsPageState();
 }
 
-class ConfigurationsPageState extends State<ConfigurationsPage> {
+class SettingsPageState extends State<SettingsPage> {
   final _sourceCodeURL = 'https://github.com/luisfgfurtado/jira_time_ctrl';
   final _formKey = GlobalKey<FormState>();
   final _apiUrlController = TextEditingController();
@@ -154,23 +154,21 @@ class ConfigurationsPageState extends State<ConfigurationsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Configurations'),
-        ),
-        body: Stack(
-          children: [
-            if (_isLoading)
-              AbsorbPointer(
-                child: Container(
-                  color: Colors.black.withOpacity(0.5),
-                  alignment: Alignment.center,
-                  child: const CircularProgressIndicator(),
-                ),
-              )
-            else
-              _buildForm(),
-          ],
-        ));
+      body: Stack(
+        children: [
+          if (_isLoading)
+            AbsorbPointer(
+              child: Container(
+                color: Colors.black.withOpacity(0.5),
+                alignment: Alignment.center,
+                child: const CircularProgressIndicator(),
+              ),
+            )
+          else
+            _buildForm(),
+        ],
+      ),
+    );
   }
 
   Form _buildForm() {

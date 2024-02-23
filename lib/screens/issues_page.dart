@@ -58,9 +58,6 @@ class IssuesPageState extends State<IssuesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Issues assigned to me'),
-      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator()) // Show loading indicator
           : _issues.isEmpty

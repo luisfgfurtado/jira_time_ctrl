@@ -9,7 +9,7 @@ import '../utils/custom_shared_preferences.dart';
 import '../widgets/timesheet_table.dart';
 
 class TimesheetPage extends StatefulWidget {
-  const TimesheetPage({super.key});
+  const TimesheetPage({Key? key}) : super(key: key);
 
   @override
   TimesheetPageState createState() => TimesheetPageState();
@@ -19,6 +19,8 @@ class TimesheetPageState extends State<TimesheetPage> {
   late JiraApiClient _jiraApiClient;
   late TempoApiClient _tempoApiClient;
   List<Issue> _issues = [];
+  List<Issue> _filteredIssues = [];
+  List<ProjectItem> _projects = [];
   bool _isLoading = true;
 
   int _tempoWorklogsPeriod = 14;
@@ -39,7 +41,7 @@ class TimesheetPageState extends State<TimesheetPage> {
     await _loadSettings();
     await _initializeClient();
     await _loadTempoWorklogIssues();
-    setState(() => _isLoading = false);
+    if (mounted) setState(() => _isLoading = false);
   }
 
   _loadSettings() async {
@@ -87,6 +89,7 @@ class TimesheetPageState extends State<TimesheetPage> {
   }
 
   void _showHelpText(String helpText) {
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -129,6 +132,20 @@ class TimesheetPageState extends State<TimesheetPage> {
     setState(() => _isLoading = false); // Set loading to false
   }
 
+  List<ProjectItem> _createProjectListItems(List<Issue> issues) {
+    var uniqueProjectKeys = issues.map((issue) => issue.fields.projectKey).toSet();
+    return uniqueProjectKeys.map((projectKey) => ProjectItem(projectKey: projectKey, title: projectKey)).toList();
+  }
+
+  Set<String> _getSelectedProjectKeys(List<ProjectItem> projects) {
+    // Assuming 'selected' is a property of Project which is true if the project is selected
+    return projects.where((project) => project.isChecked).map((project) => project.projectKey).toSet();
+  }
+
+  List<Issue> _filterIssuesBySelectedProjects(List<Issue> allIssues, Set<String> selectedProjectKeys) {
+    return allIssues.where((issue) => selectedProjectKeys.contains(issue.fields.projectKey)).toList();
+  }
+
   Future<void> loadIssues(String startDate, String endDate) async {
     String jql = _timesheetJQL.replaceAll('#STARTDATE#', startDate).replaceAll('#ENDDATE#', endDate);
     if (_showAssignedToMe) {
@@ -153,7 +170,9 @@ class TimesheetPageState extends State<TimesheetPage> {
       setState(() {
         _startDate = startDate;
         _endDate = endDate;
+        _projects = _createProjectListItems(issues);
         _issues = issues;
+        _filteredIssues = _filterIssuesBySelectedProjects(_issues, _getSelectedProjectKeys(_projects));
         //_isLoading = false; // Set loading to false after data is loaded
       });
     } catch (e) {
@@ -185,51 +204,7 @@ class TimesheetPageState extends State<TimesheetPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Timesheet'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              _showHelpText('Not implemented.\nGo to configuration and add manually.');
-            },
-            child: const Row(
-              children: <Widget>[
-                Icon(Icons.add), // Change color as needed
-                Text('Add Issue'),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              _fullReloadIssues();
-            },
-            child: const Row(
-              children: <Widget>[
-                Icon(Icons.refresh), // Change color as needed
-                Text('refresh'),
-              ],
-            ),
-          ),
-          _buildActionSwitch(
-            label: 'Assigned to Me',
-            value: _showAssignedToMe,
-            onChanged: (value) => setState(() {
-              _showAssignedToMe = value;
-              _fullReloadIssues();
-              _saveSettings();
-            }),
-          ),
-          _buildActionSwitch(
-            label: 'Show Weekend',
-            value: _showWeekend,
-            onChanged: (value) => setState(() {
-              _showWeekend = value;
-              _saveSettings();
-            }),
-          ),
-          const SizedBox(width: 20)
-        ],
-      ),
+      // appBar: topBar(),
       body: _isLoading
           ? Container(
               color: const Color.fromARGB(255, 116, 116, 116).withOpacity(0.2), // Semi-transparent overlay
@@ -237,14 +212,119 @@ class TimesheetPageState extends State<TimesheetPage> {
                 child: CircularProgressIndicator(),
               ),
             )
-          : TimesheetTable(
-              issues: _issues,
-              showWeekend: _showWeekend,
-              jiraApiClient: _jiraApiClient,
-              loadIssues: loadIssues, // Your existing callback
-              onUpdateIssue: updateIssue, // Your existing callback
-              tempoWorklogsPeriod: _tempoWorklogsPeriod, //Tempo Worklog Period (last n of days)
+          : Row(
+              children: [
+                Flexible(
+                  flex: 2, // Convert width to flex value
+                  child: Container(
+                    width: 180,
+                    color: Colors.blueGrey.shade100, // Just for visibility
+                    child: Transform.scale(
+                      scale: 0.85,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              _showHelpText('Not implemented.\nGo to settings and add manually.');
+                            },
+                            child: const Row(
+                              children: <Widget>[
+                                Icon(Icons.add), // Change color as needed
+                                Text('Add Issue'),
+                              ],
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              _fullReloadIssues();
+                            },
+                            child: const Row(
+                              children: <Widget>[
+                                Icon(Icons.refresh), // Change color as needed
+                                Text('refresh'),
+                              ],
+                            ),
+                          ),
+                          _buildActionSwitch(
+                            label: 'Show Weekend',
+                            value: _showWeekend,
+                            onChanged: (value) => setState(() {
+                              _showWeekend = value;
+                              _saveSettings();
+                            }),
+                          ),
+                          _buildActionSwitch(
+                            label: 'Assigned to Me',
+                            value: _showAssignedToMe,
+                            onChanged: (value) => setState(() {
+                              _showAssignedToMe = value;
+                              _fullReloadIssues();
+                              _saveSettings();
+                            }),
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.all(10.0),
+                            child: Text(
+                              'Projects', // Title for your list
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                          ),
+                          Expanded(
+                            child: ListView.builder(
+                              itemCount: _projects.length,
+                              itemBuilder: (context, index) {
+                                return ListTile(
+                                  dense: true,
+                                  leading: Checkbox(
+                                    value: _projects[index].isChecked,
+                                    onChanged: (bool? value) {
+                                      setState(() {
+                                        _projects[index].isChecked = value ?? false;
+                                        _filteredIssues = _filterIssuesBySelectedProjects(_issues, _getSelectedProjectKeys(_projects));
+                                      });
+                                    },
+                                  ),
+                                  title: Text(_projects[index].title),
+                                  onTap: () {
+                                    // Change the checkbox value on tapping the whole ListTile
+                                    setState(() {
+                                      _projects[index].isChecked = !_projects[index].isChecked;
+                                      _filteredIssues = _filterIssuesBySelectedProjects(_issues, _getSelectedProjectKeys(_projects));
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Main content (TimesheetTable)
+                Expanded(
+                  flex: 10,
+                  child: TimesheetTable(
+                    issues: _issues,
+                    filteredIssues: _filteredIssues,
+                    showWeekend: _showWeekend,
+                    jiraApiClient: _jiraApiClient,
+                    loadIssues: loadIssues, // Your existing callback
+                    onUpdateIssue: updateIssue, // Your existing callback
+                    tempoWorklogsPeriod: _tempoWorklogsPeriod, //Tempo Worklog Period (last n of days)
+                  ),
+                ),
+              ],
             ),
     );
   }
+}
+
+class ProjectItem {
+  String projectKey;
+  String title;
+  bool isChecked;
+
+  ProjectItem({required this.projectKey, required this.title, this.isChecked = true});
 }
