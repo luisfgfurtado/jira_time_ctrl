@@ -4,9 +4,10 @@ The Jira Worklog Manager is a specialized app designed to streamline the process
 
 ## Key Features:
 
-![Main Window](https://github.com/luisfgfurtado/jira_time_ctrl/blob/main/res/mainwindow.png?raw=true | width=300)
-![Open/Add worklog](https://github.com/luisfgfurtado/jira_time_ctrl/blob/main/res/openworklog.png?raw=true | width=300)
+![Main Window](https://github.com/luisfgfurtado/jira_time_ctrl/blob/main/res/mainwindow.png?raw=true)
+![Test](https://github.com/luisfgfurtado/jira_time_ctrl/blob/main/res/openworklog.png?raw=true | width=300)
 ![Edit worklog](https://github.com/luisfgfurtado/jira_time_ctrl/blob/main/res/editworklog.png?raw=true | width=300)
+<img src="https://github.com/luisfgfurtado/jira_time_ctrl/blob/main/res/editworklog.png?raw=true" width="300">
 
 1. **Efficient Worklog Viewing:** Easily view detailed worklogs for each issue, organized by week. This feature allows users to quickly assess time spent on various tasks and projects.
 
