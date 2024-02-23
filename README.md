@@ -24,6 +24,10 @@ Jira Worklog Manager is designed to be a powerful companion for anyone looking t
 
 To begin using the Timesheet Application for Jira, download the application from the releases page.
 
+![alt text](https://github.com/luisfgfurtado/jira_time_ctrl/blob/main/res/mainwindow.png?raw=true)
+![alt text](https://github.com/luisfgfurtado/jira_time_ctrl/blob/main/res/openworklog.png?raw=true)
+![alt text](https://github.com/luisfgfurtado/jira_time_ctrl/blob/main/res/editworklog.png?raw=true)
+
 ## Setup: Configuring the Application
 
 1. **API URL:** In the configuration, enter the API URL for your Jira instance. This is the base URL used to access your Jira account.
