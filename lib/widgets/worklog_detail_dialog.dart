@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 //import 'package:shared_preferences/shared_preferences.dart';
 import '../models/issue.dart';
 import '../services/jira_api_client.dart';
 //import '../utils/custom_shared_preferences.dart';
+import '../utils/custom_shared_preferences.dart';
 import '../utils/dateformat.dart';
 
 class WorklogDetailDialog extends StatefulWidget {
@@ -30,6 +32,7 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
   late String _remainingEstimate;
   late String _remainingOption;
   late bool _isNewWorklogEntry;
+  late List<String> _commentHistory = [];
   bool _isLoading = false;
 
   final Map<String, String> _remainingOptions = {
@@ -42,29 +45,29 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
   @override
   void initState() {
     super.initState();
+    _loadSettings();
     _newWorklogEntry();
-    //_loadSettings();
   }
 
-  // _loadSettings() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   setState(() {
-  //     _worklogEntry.timeSpentSeconds = prefs.getInt('${widget.issue.key}_timeSpentSeconds') ?? 0;
-  //     _worklogEntry.comment = prefs.getString('${widget.issue.key}_comment') ?? '';
-  //   });
-  // }
+  _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      //_worklogEntry.timeSpentSeconds = prefs.getInt('${widget.issue.key}_timeSpentSeconds') ?? 0;
+      _commentHistory = prefs.getStringList('${widget.issue.key}_comment_history') ?? [];
+    });
+  }
 
-  // _saveSettings() async {
-  //   bool localStorageIsEnabled = await CustomSharedPreferences.checkIfLocalStorageIsEnabled();
-  //   if (localStorageIsEnabled) {
-  //     final prefs = await SharedPreferences.getInstance();
-  //     prefs.setInt('${widget.issue.key}_timeSpentSeconds', _worklogEntry.timeSpentSeconds);
-  //     prefs.setString('${widget.issue.key}_comment', _worklogEntry.comment);
-  //   } else {
-  //     // Handle the scenario when local storage is not available
-  //     throw Exception("local storage is disabled");
-  //   }
-  // }
+  _saveSettings() async {
+    bool localStorageIsEnabled = await CustomSharedPreferences.checkIfLocalStorageIsEnabled();
+    if (localStorageIsEnabled) {
+      final prefs = await SharedPreferences.getInstance();
+      //prefs.setInt('${widget.issue.key}_timeSpentSeconds', _worklogEntry.timeSpentSeconds);
+      prefs.setStringList('${widget.issue.key}_comment_history', _commentHistory);
+    } else {
+      // Handle the scenario when local storage is not available
+      throw Exception("local storage is disabled");
+    }
+  }
 
   void _newWorklogEntry() {
     setState(() {
@@ -122,7 +125,11 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       _formKey.currentState!.save();
-      //_saveSettings();
+      if (!_commentHistory.contains(_worklogEntry.comment)) {
+        _commentHistory.add(_worklogEntry.comment);
+        if (_commentHistory.length > 4) _commentHistory.removeAt(0); // Remove the oldest entry
+      }
+      _saveSettings();
       try {
         dynamic result = await widget.jiraApiClient.upInsertWorklogEntry(
           worklogEntry: _worklogEntry,
@@ -220,11 +227,11 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
                 Card(
                   margin: EdgeInsets.zero,
                   child: Padding(
-                    padding: const EdgeInsets.all(20.0),
+                    padding: const EdgeInsets.only(top: 0, left: 20, right: 20, bottom: 20),
                     child: Column(
                       children: [
                         _buildWorklogsList(),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 10),
                         _buildFormContent(),
                       ],
                     ),
@@ -239,42 +246,45 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
   }
 
   Widget _buildWorklogsList() {
-    return Column(
-      children: widget.issue.fields.worklog.worklogs.where((worklogEntry) {
-        // Check if the worklog's date matches widget.date
-        return DateFormat('yyyy-MM-dd').format(worklogEntry.started) == DateFormat('yyyy-MM-dd').format(widget.date);
-      }).map((worklogEntry) {
-        String comment = worklogEntry.comment.isNotEmpty ? worklogEntry.comment.split('\n').first : 'no comment';
-        return Row(children: [
-          const SizedBox(width: 20, child: Icon(Icons.watch_later_outlined, size: 15, color: Color.fromRGBO(162, 0, 190, 1))),
-          Flexible(
-            // Wrapping the comment text inside Flexible
-            child: Text(
-              '${formatDateTimeToHHMM(worklogEntry.started)} (${worklogEntry.timeSpent}) - $comment', // Get only the first line of the comment
-              overflow: TextOverflow.ellipsis, // Adding ellipsis overflow
-              softWrap: false, // Prevents line wrapping
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Column(
+        children: widget.issue.fields.worklog.worklogs.where((worklogEntry) {
+          // Check if the worklog's date matches widget.date
+          return DateFormat('yyyy-MM-dd').format(worklogEntry.started) == DateFormat('yyyy-MM-dd').format(widget.date);
+        }).map((worklogEntry) {
+          String comment = worklogEntry.comment.isNotEmpty ? worklogEntry.comment.split('\n').first : 'no comment';
+          return Row(children: [
+            const SizedBox(width: 20, child: Icon(Icons.watch_later_outlined, size: 15, color: Color.fromRGBO(162, 0, 190, 1))),
+            Flexible(
+              // Wrapping the comment text inside Flexible
+              child: Text(
+                '${formatDateTimeToHHMM(worklogEntry.started)} (${worklogEntry.timeSpent}) - $comment', // Get only the first line of the comment
+                overflow: TextOverflow.ellipsis, // Adding ellipsis overflow
+                softWrap: false, // Prevents line wrapping
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 10),
-            child: SizedBox(
-              width: 22,
-              height: 22,
-              child: RawMaterialButton(
-                onPressed: () => _editWorklog(worklogEntry), //edit worklog entry
-                elevation: 2.0,
-                fillColor: Colors.purple.shade200,
-                padding: const EdgeInsets.all(00),
-                shape: const CircleBorder(),
-                child: const Icon(
-                  Icons.edit,
-                  size: 15,
+            Padding(
+              padding: const EdgeInsets.only(left: 10),
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: RawMaterialButton(
+                  onPressed: () => _editWorklog(worklogEntry), //edit worklog entry
+                  elevation: 2.0,
+                  fillColor: Colors.purple.shade200,
+                  padding: const EdgeInsets.all(00),
+                  shape: const CircleBorder(),
+                  child: const Icon(
+                    Icons.edit,
+                    size: 15,
+                  ),
                 ),
               ),
             ),
-          ),
-        ]);
-      }).toList(),
+          ]);
+        }).toList(),
+      ),
     );
   }
 
@@ -370,17 +380,63 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
           padding: const EdgeInsets.all(8.0),
           child: Text(_remainingOptions[_remainingOption] ?? '', style: const TextStyle(fontSize: 10)),
         ),
-        TextFormField(
-          decoration: const InputDecoration(
-            hintText: 'Comments',
-            labelText: 'Description',
-          ),
-          controller: TextEditingController(text: _worklogEntry.comment),
-          keyboardType: TextInputType.multiline,
-          minLines: 1,
-          maxLines: 5,
-          onSaved: (value) => _worklogEntry.comment = value!,
-        )
+        Stack(
+          children: [
+            //Position the TextField at the bottom
+            Positioned(
+              child: TextFormField(
+                decoration: const InputDecoration(
+                  hintText: 'Comments',
+                  labelText: 'Description',
+                ),
+                controller: TextEditingController(text: _worklogEntry.comment),
+                keyboardType: TextInputType.multiline,
+                minLines: 2,
+                maxLines: 5,
+                onSaved: (value) => _worklogEntry.comment = value!,
+              ),
+            ),
+            // Overlay the button on top
+            _commentHistory.isNotEmpty
+                ? Positioned(
+                    right: 10.0, // Adjust right and top paddings as needed
+                    top: 10.0,
+                    child: FloatingActionButton(
+                      mini: true,
+                      elevation: 0,
+                      child: const Icon(Icons.history),
+                      onPressed: () {
+                        // Show a modal bottom sheet with the comment history
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (context) => ListView.separated(
+                            separatorBuilder: (context, index) => const Divider(height: 1), // Add a divider between items
+                            padding: const EdgeInsets.all(16.0),
+                            itemCount: _commentHistory.length,
+                            itemBuilder: (context, index) {
+                              final comment = _commentHistory[index];
+                              return OutlinedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _worklogEntry.comment = comment;
+                                  });
+                                  Navigator.pop(context); // Close the bottom sheet
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  shape: const ContinuousRectangleBorder(),
+                                  side: const BorderSide(style: BorderStyle.none),
+                                ),
+                                child: Text(comment),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  )
+                : const SizedBox(width: 12),
+          ],
+        ),
       ]),
     );
   }
