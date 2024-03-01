@@ -94,6 +94,44 @@ class JiraApiClient {
     return completer.future;
   }
 
+  Future<String> getAPIUserKey() async {
+    var client = http.Client();
+    if (_apiUrl.isEmpty) return 'Failed: Invalid Jira API URL';
+    if (_apiKey.isEmpty) return 'Failed: Invalid Jira API key';
+
+    Completer<String> completer = Completer();
+
+    Timer(const Duration(seconds: 5), () {
+      if (!completer.isCompleted) {
+        completer.completeError('Timeout error');
+      }
+    });
+
+    try {
+      await client.get(
+        Uri.parse('${_apiUrl}rest/api/latest/myself'),
+        headers: {
+          'Authorization': 'Bearer $_apiKey',
+          'Content-Type': 'application/json',
+        },
+      ).then((response) {
+        if (response.statusCode == 401) {
+          completer.complete('Failed: Invalid or expired API key');
+        } else if (response.statusCode == 404) {
+          completer.complete('Failed: Invalid board ID');
+        } else if (response.statusCode != 200) {
+          completer.complete('Failed: (${response.statusCode})\napiUrl: $_apiUrl\napiKey: $_apiKey\n\n${response.reasonPhrase}');
+        } else {
+          completer.complete(jsonDecode(response.body)['key']);
+        }
+      });
+    } catch (e) {
+      completer.completeError('Error: ${e.toString()}');
+    }
+
+    return completer.future;
+  }
+
   Future<List<dynamic>> getIssuesAssignedToCurrentUser() async {
     var client = http.Client();
     if (_apiUrl.isEmpty) throw 'Failed: Invalid Jira API URL';
@@ -110,7 +148,8 @@ class JiraApiClient {
     try {
       await client.get(
         Uri.parse(
-            '${_apiUrl}rest/api/2/search?fields=id,key,summary,project,worklog,status&jql=assignee=currentuser() and status not in (Done,Closed , resolved,Cancelled)'),
+            //'${_apiUrl}rest/api/2/search?fields=id,key,summary,project,worklog,status&jql=assignee=currentuser() and status not in (Done,Closed,resolved,Cancelled)'),
+            '${_apiUrl}rest/api/2/search?fields=id,key,summary,project,status&jql=assignee=currentuser() and status not in (Done,Closed,resolved,Cancelled)'),
         headers: {
           'Authorization': 'Bearer $_apiKey',
           'Content-Type': 'application/json',
@@ -148,7 +187,8 @@ class JiraApiClient {
 
     try {
       await client.get(
-        Uri.parse('${_apiUrl}rest/api/2/search?fields=id,key,summary,project,worklog,status&jql=$jql'),
+        //Uri.parse('${_apiUrl}rest/api/2/search?fields=id,key,summary,project,worklog,status&jql=$jql'),
+        Uri.parse('${_apiUrl}rest/api/2/search?fields=id,key,summary,project,status,assignee&jql=$jql'),
         headers: {
           'Authorization': 'Bearer $_apiKey',
           'Content-Type': 'application/json',

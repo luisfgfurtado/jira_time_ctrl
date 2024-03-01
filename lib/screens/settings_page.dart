@@ -24,6 +24,7 @@ class SettingsPageState extends State<SettingsPage> {
   final _tempoWorklogsPeriodController = TextEditingController();
   String _jiraApiUrl = '';
   String _jiraApiKey = '';
+  String _jiraApiUserKey = '';
   String _jiraBoardId = '';
   String _jiraTimesheetAddedIssues = '';
   bool _jiraJqlHasError = false;
@@ -63,6 +64,7 @@ class SettingsPageState extends State<SettingsPage> {
     setState(() {
       _jiraApiUrl = prefs.getString('jiraApiUrl') ?? _jiraApiUrl;
       _jiraApiKey = prefs.getString('jiraApiKey') ?? _jiraApiKey;
+      _jiraApiUserKey = prefs.getString('jiraApiUserKey') ?? _jiraApiUserKey;
       _jiraBoardId = prefs.getString('jiraBoardId') ?? _jiraBoardId;
       _jiraTimesheetAddedIssues = prefs.getString('jiraTimesheetAddedIssues') ?? _jiraTimesheetAddedIssues;
       _jiraTimesheetJQL = prefs.getString('jiraTimesheetJQL') ?? _jiraTimesheetJQL;
@@ -79,12 +81,22 @@ class SettingsPageState extends State<SettingsPage> {
     });
   }
 
+  _updateAPIUserKey() async {
+    setState(() => _isLoading = true);
+
+    JiraApiClient jiraClient = await JiraApiClient.create();
+    _jiraApiUserKey = await jiraClient.getAPIUserKey();
+    setState(() => _isLoading = false);
+  }
+
   _saveSettings() async {
+    await _updateAPIUserKey();
     bool localStorageIsEnabled = await CustomSharedPreferences.checkIfLocalStorageIsEnabled();
     if (localStorageIsEnabled) {
       final prefs = await SharedPreferences.getInstance();
       prefs.setString('jiraApiUrl', _jiraApiUrl);
       prefs.setString('jiraApiKey', _jiraApiKey);
+      prefs.setString('jiraApiUserKey', _jiraApiUserKey);
       prefs.setString('jiraBoardId', _jiraBoardId);
       prefs.setString('jiraTimesheetAddedIssues', _jiraTimesheetAddedIssues);
       prefs.setString('jiraTimesheetJQL', _jiraTimesheetJQL);
@@ -214,6 +226,7 @@ class SettingsPageState extends State<SettingsPage> {
                   return null;
                 },
               ),
+              Text(_jiraApiUserKey),
               const SizedBox(height: 10), // give it some space
               TextFormField(
                 controller: _boardIdController,
@@ -242,12 +255,6 @@ class SettingsPageState extends State<SettingsPage> {
                   _jiraTimesheetJQL = value;
                   _jiraJqlHasError = false;
                 },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter valid JQL expression';
-                  }
-                  return null;
-                },
               ),
               Text('JQL has error status: ${_jiraJqlHasError.toString()}'),
               const SizedBox(height: 20), // give it some space
@@ -257,8 +264,8 @@ class SettingsPageState extends State<SettingsPage> {
                 onChanged: (value) => _tempoWorklogsPeriod = int.tryParse(value) ?? _tempoWorklogsPeriod,
                 validator: (value) {
                   int? v = int.tryParse(value ?? '');
-                  if (value == null || value.isEmpty || v == null || v < 1 || v > 60) {
-                    return 'Please enter valid number between 1 and 60.';
+                  if (value == null || value.isEmpty || v == null || v < 7 || v > 60) {
+                    return 'Please enter valid number between 7 and 60.';
                   }
                   return null;
                 },

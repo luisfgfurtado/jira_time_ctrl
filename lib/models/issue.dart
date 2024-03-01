@@ -11,7 +11,7 @@ class Issue {
 
   static String getFormattedWorklogTime(int totalMinutes) {
     if (totalMinutes == 0) {
-      return '-';
+      return '';
     } else if (totalMinutes < 60) {
       // Less than an hour: display in minutes
       return '$totalMinutes\u00A0min';
@@ -99,13 +99,13 @@ class Issue {
     };
   }
 
-  factory Issue.fromMap(Map<String, dynamic> map) {
+  factory Issue.fromMap(Map<String, dynamic> map, [String currentAPIUserKey = '']) {
     return Issue(
       expand: map['expand'],
       id: map['id'],
       self: map['self'],
       key: map['key'],
-      fields: Fields.fromMap(map['fields']),
+      fields: Fields.fromMap(map['fields'], currentAPIUserKey),
     );
   }
 
@@ -128,12 +128,14 @@ class Fields {
   String summary;
   String projectKey;
   Worklog worklog;
+  Assignee assignee;
   Status status;
 
   Fields({
     required this.summary,
     required this.projectKey,
     required this.worklog,
+    required this.assignee,
     required this.status,
   });
 
@@ -142,15 +144,18 @@ class Fields {
       'summary': summary,
       'projectId': projectKey,
       'worklog': worklog.toMap(),
+      'assignee': assignee.toMap(),
       'status': status.toMap(),
     };
   }
 
-  factory Fields.fromMap(Map<String, dynamic> map) {
+  factory Fields.fromMap(Map<String, dynamic> map, [String currentAPIUserKey = '']) {
     return Fields(
       summary: map['summary'],
       projectKey: map['project']['key'],
-      worklog: Worklog.fromMap(map['worklog']),
+      //disable load worklogs from Jira API
+      worklog: Worklog(worklogs: []), // Worklog.fromMap(map['worklog']),
+      assignee: map['assignee'] != null ? Assignee.fromMap(map['assignee'], currentAPIUserKey) : Assignee(me: false),
       status: Status.fromMap(map['status']),
     );
   }
@@ -160,6 +165,7 @@ class Fields {
       summary: map['issue_summary'],
       projectKey: map['projectKey'],
       worklog: Worklog.fromTempoMap(map),
+      assignee: Assignee.fromTempoMap(), //assign to current user
       status: Status.fromTempoMap(map),
     );
   }
@@ -349,6 +355,55 @@ class StatusCategory {
       key: '',
       colorName: '',
       name: '',
+    );
+  }
+}
+
+class Assignee {
+  bool me;
+  String self;
+  String name;
+  String key;
+  String emailAddress;
+  String displayName;
+  bool active;
+
+  Assignee({
+    required this.me,
+    this.self = '',
+    this.name = '',
+    this.key = '',
+    this.emailAddress = '',
+    this.displayName = '',
+    this.active = true,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'me': me,
+      'self': self,
+      'name': name,
+      'key': key,
+      'emailAddress': emailAddress,
+      'displayName': displayName,
+      'active': active,
+    };
+  }
+
+  factory Assignee.fromMap(Map<String, dynamic> map, [String currentAPIUserKey = '']) {
+    return Assignee(
+      me: map['key'] == currentAPIUserKey,
+      self: map['self'],
+      name: map['name'],
+      key: map['key'],
+      emailAddress: map['emailAddress'],
+      displayName: map['displayName'],
+      active: map['active'],
+    );
+  }
+  factory Assignee.fromTempoMap() {
+    return Assignee(
+      me: false,
     );
   }
 }

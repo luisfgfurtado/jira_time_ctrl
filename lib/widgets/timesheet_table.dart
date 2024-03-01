@@ -82,14 +82,15 @@ class _TimesheetTableState extends State<TimesheetTable> {
     return DataColumn(
       label: Container(
         width: _colDataWidth,
-        color: isToday(_currentWeekStart, dayNumber) ? Colors.blueGrey.shade100 : null,
-        child: Text(value, textAlign: TextAlign.center),
+        color: isToday(_currentWeekStart, dayNumber) ? Theme.of(context).primaryColor : null,
+        child: Text(value, textAlign: TextAlign.center, style: TextStyle(color: isToday(_currentWeekStart, dayNumber) ? Colors.white : null)),
       ),
     );
   }
 
   // Build rows dynamically, including weekend data cells conditionally
-  List<DataRow> _buildRows(double colSummaryWidth) {
+  List<DataRow> _buildRows(BuildContext context, double colSummaryWidth) {
+    int i = 0;
     List<DataRow> rows = widget.filteredIssues.map((issue) {
       var worklogMinutesByDay = issue.getWorklogMinutesByWeekday(_currentWeekStart);
       List<DataCell> cells = [
@@ -109,14 +110,29 @@ class _TimesheetTableState extends State<TimesheetTable> {
           ),
         ),
         DataCell(
-          SizedBox(
-            width: colSummaryWidth,
-            child: Text(
-              issue.fields.summary,
-              overflow: TextOverflow.ellipsis,
-              softWrap: false,
-              maxLines: 1,
-            ),
+          Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: issue.fields.assignee.me
+                    ? Icon(
+                        Icons.account_circle_rounded,
+                        color: Theme.of(context).primaryColor,
+                        size: 14,
+                      )
+                    : const SizedBox(width: 14),
+              ),
+              const SizedBox(width: 5),
+              SizedBox(
+                width: colSummaryWidth,
+                child: Text(
+                  issue.fields.summary,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                  maxLines: 1,
+                ),
+              ),
+            ],
           ),
         ),
         _buildWorklogCell(issue, _currentWeekStart.add(const Duration(days: 0)), worklogMinutesByDay['Monday']!),
@@ -132,8 +148,11 @@ class _TimesheetTableState extends State<TimesheetTable> {
           _buildWorklogCell(issue, _currentWeekStart.add(const Duration(days: 6)), worklogMinutesByDay['Sunday']!),
         ]);
       }
-
-      return DataRow(cells: cells);
+      i++;
+      return DataRow(
+        color: i.isOdd ? MaterialStateColor.resolveWith((states) => Colors.grey.shade100) : MaterialStateColor.resolveWith((states) => Colors.white),
+        cells: cells,
+      );
     }).toList();
 
     // Add the total row
@@ -166,7 +185,7 @@ class _TimesheetTableState extends State<TimesheetTable> {
   DataCell _buildWorklogCell(Issue issue, DateTime date, int minutes) {
     return DataCell(
       Container(
-        color: isToday(date) ? Colors.blueGrey.shade50 : null,
+        color: isToday(date) ? Theme.of(context).primaryColor.withOpacity(0.15) : null,
         width: _colDataWidth,
         child: TextButton(
           onPressed: () => _showWorklogDetailDialog(context, issue, date),
@@ -179,12 +198,12 @@ class _TimesheetTableState extends State<TimesheetTable> {
   DataCell _buildTotalCell(String value, int dayNumber) {
     return DataCell(
       Container(
-        color: isToday(_currentWeekStart, dayNumber) ? Colors.blueGrey.shade100 : null,
+        color: isToday(_currentWeekStart, dayNumber) ? Theme.of(context).primaryColor : null,
         width: _colDataWidth,
         child: Text(
           value,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: isToday(_currentWeekStart, dayNumber) ? Colors.white : null),
         ),
       ),
     );
@@ -354,7 +373,7 @@ class _TimesheetTableState extends State<TimesheetTable> {
                       dataRowHeight: 30,
                       headingRowHeight: 43,
                       columns: _buildColumns(dayNumbers, colSummaryWidth),
-                      rows: _buildRows(colSummaryWidth),
+                      rows: _buildRows(context, colSummaryWidth),
                       // sortAscending: true,
                       // sortColumnIndex: 0,
                     );

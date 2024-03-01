@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/issue.dart';
 import '../services/jira_api_client.dart';
 import '../utils/custom_shared_preferences.dart';
+import '../widgets/action_switch.dart';
 import '../widgets/timesheet_table.dart';
 
 class TimesheetPage extends StatefulWidget {
@@ -23,11 +24,14 @@ class TimesheetPageState extends State<TimesheetPage> {
   List<ProjectItem> _projects = [];
   bool _isLoading = true;
 
+  String _jiraApiUserKey = '';
   int _tempoWorklogsPeriod = 14;
   bool _showAssignedToMe = false;
+  bool _showWithWorklog = true;
   bool _showWeekend = false;
   String _timesheetJQL = '';
   String _timesheetAddedIssues = '';
+  List<String> _timesheetAddedIssuesList = [];
   String _startDate = '';
   String _endDate = '';
 
@@ -47,11 +51,14 @@ class TimesheetPageState extends State<TimesheetPage> {
   _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
+      _jiraApiUserKey = prefs.getString('jiraApiUserKey') ?? _jiraApiUserKey;
       _tempoWorklogsPeriod = prefs.getInt('tempoWorklogsPeriod') ?? 14;
       _showAssignedToMe = prefs.getBool('showAssignedToMe') ?? false;
+      _showWithWorklog = prefs.getBool('showWithWorklog') ?? true;
       _showWeekend = prefs.getBool('showWeekend') ?? false;
       _timesheetAddedIssues = prefs.getString('jiraTimesheetAddedIssues') ?? '';
       _timesheetJQL = prefs.getString('jiraTimesheetJQL') ?? '(worklogDate >= #STARTDATE# AND worklogDate <= #ENDDATE# AND worklogAuthor = currentuser())';
+      _timesheetAddedIssuesList = _timesheetAddedIssues.split(',');
     });
     _saveSettings(); //update last page index
   }
@@ -61,25 +68,14 @@ class TimesheetPageState extends State<TimesheetPage> {
     _tempoApiClient = await TempoApiClient.create();
   }
 
-  Widget _buildActionSwitch({
-    required String label,
-    required bool value,
-    required Function(bool) onChanged,
-  }) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Transform.scale(scale: 0.7, child: Switch(value: value, onChanged: onChanged)),
-        Text(label),
-      ],
-    );
-  }
-
   _saveSettings() async {
     bool localStorageIsEnabled = await CustomSharedPreferences.checkIfLocalStorageIsEnabled();
     if (localStorageIsEnabled) {
       final prefs = await SharedPreferences.getInstance();
+      _timesheetAddedIssues = _timesheetAddedIssuesList.join(',');
+      prefs.setString('jiraTimesheetAddedIssues', _timesheetAddedIssues);
       prefs.setBool('showAssignedToMe', _showAssignedToMe);
+      prefs.setBool('showWithWorklog', _showWithWorklog);
       prefs.setBool('showWeekend', _showWeekend);
       prefs.setInt('lastPageIndex', 1);
     } else {
@@ -110,7 +106,6 @@ class TimesheetPageState extends State<TimesheetPage> {
   }
 
   Future<void> _loadTempoWorklogIssues() async {
-    //setState(() => _isLoading = true); // Set loading to true
     try {
       List<Issue> issues = await _tempoApiClient.getTempoWorklogsIssues();
       setState(() {
@@ -146,18 +141,31 @@ class TimesheetPageState extends State<TimesheetPage> {
     return allIssues.where((issue) => selectedProjectKeys.contains(issue.fields.projectKey)).toList();
   }
 
+  List<Issue> _applyFilters(List<Issue> allIssues) {
+    List<Issue> fIssues = _filterIssuesBySelectedProjects(_issues, _getSelectedProjectKeys(_projects));
+    return fIssues.where((issue) {
+      return (_showAssignedToMe && issue.fields.assignee.me) ||
+          (_showWithWorklog && issue.fields.worklog.worklogs.isNotEmpty) ||
+          (_timesheetAddedIssuesList.contains(issue.key));
+    }).toList();
+  }
+
   Future<void> loadIssues(String startDate, String endDate) async {
-    String jql = _timesheetJQL.replaceAll('#STARTDATE#', startDate).replaceAll('#ENDDATE#', endDate);
+    String jql = _timesheetJQL.trim();
+    if (_showWithWorklog) {
+      jql += '${jql.isNotEmpty ? ' OR ' : ''}(worklogDate >= #STARTDATE# AND worklogDate <= #ENDDATE# AND worklogAuthor = currentuser())';
+    }
     if (_showAssignedToMe) {
-      jql += ' OR (assignee=currentuser() AND status NOT IN (Done,Closed,resolved,Cancelled))';
+      jql += '${jql.isNotEmpty ? ' OR ' : ''}(assignee=currentuser() AND status NOT IN (Done,Closed,resolved,Cancelled))';
     }
     if (_timesheetAddedIssues.isNotEmpty) {
-      jql += ' OR (issuekey IN ($_timesheetAddedIssues))';
+      jql += '${jql.isNotEmpty ? ' OR ' : ''}(issuekey IN ($_timesheetAddedIssues))';
     }
-    //setState(() => _isLoading = true); // Set loading to true
+    jql = jql.replaceAll('#STARTDATE#', startDate).replaceAll('#ENDDATE#', endDate);
     try {
+      debugPrint(jql);
       List<dynamic> issuesData = await _jiraApiClient.getIssues(jql);
-      List<Issue> issues = issuesData.map((issueData) => Issue.fromMap(issueData)).toList();
+      List<Issue> issues = issuesData.map((issueData) => Issue.fromMap(issueData, _jiraApiUserKey)).toList();
       issues = mergeIssueLists(issues, _issues);
       issues.sort((a, b) {
         int projectIdComparison = a.fields.projectKey.compareTo(b.fields.projectKey);
@@ -172,7 +180,7 @@ class TimesheetPageState extends State<TimesheetPage> {
         _endDate = endDate;
         _projects = _createProjectListItems(issues);
         _issues = issues;
-        _filteredIssues = _filterIssuesBySelectedProjects(_issues, _getSelectedProjectKeys(_projects));
+        _filteredIssues = _applyFilters(_issues);
         //_isLoading = false; // Set loading to false after data is loaded
       });
     } catch (e) {
@@ -214,97 +222,168 @@ class TimesheetPageState extends State<TimesheetPage> {
             )
           : Row(
               children: [
-                Flexible(
-                  flex: 2, // Convert width to flex value
-                  child: Container(
-                    width: 180,
-                    color: Colors.blueGrey.shade100, // Just for visibility
-                    child: Transform.scale(
-                      scale: 0.85,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              _showHelpText('Not implemented.\nGo to settings and add manually.');
-                            },
-                            child: const Row(
-                              children: <Widget>[
-                                Icon(Icons.add), // Change color as needed
-                                Text('Add Issue'),
-                              ],
-                            ),
+                Container(
+                  width: 220,
+                  padding: EdgeInsets.zero,
+                  color: Colors.blueGrey.shade100, // Just for visibility
+                  child: Transform.scale(
+                    scale: 0.85,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            _fullReloadIssues();
+                          },
+                          child: const Row(
+                            children: <Widget>[
+                              Icon(Icons.refresh), // Change color as needed
+                              Text('refresh'),
+                            ],
                           ),
-                          TextButton(
-                            onPressed: () {
-                              _fullReloadIssues();
-                            },
-                            child: const Row(
-                              children: <Widget>[
-                                Icon(Icons.refresh), // Change color as needed
-                                Text('refresh'),
-                              ],
-                            ),
-                          ),
-                          _buildActionSwitch(
+                        ),
+                        ActionSwitch(
                             label: 'Show Weekend',
                             value: _showWeekend,
                             onChanged: (value) => setState(() {
-                              _showWeekend = value;
-                              _saveSettings();
-                            }),
-                          ),
-                          _buildActionSwitch(
+                                  _showWeekend = value;
+                                  _saveSettings();
+                                })),
+                        ActionSwitch(
                             label: 'Assigned to Me',
                             value: _showAssignedToMe,
                             onChanged: (value) => setState(() {
-                              _showAssignedToMe = value;
-                              _fullReloadIssues();
-                              _saveSettings();
-                            }),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.all(10.0),
-                            child: Text(
-                              'Projects', // Title for your list
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  _showAssignedToMe = value;
+                                  _saveSettings();
+                                  _fullReloadIssues();
+                                })),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              child: ActionSwitch(
+                                  label: 'With worklog',
+                                  value: _showWithWorklog,
+                                  onChanged: (value) => setState(() {
+                                        _showWithWorklog = value;
+                                        _saveSettings();
+                                        _fullReloadIssues();
+                                      })),
                             ),
+                            IconButton(
+                              iconSize: 16,
+                              icon: const Icon(Icons.help_outline),
+                              onPressed: () => _showHelpText('Use Tempo API to retrieve last \'n\' days issues with worklogs registered.'),
+                            ),
+                          ],
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.all(10.0),
+                          child: Text(
+                            'Projects', // Title for your list
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                           ),
-                          Expanded(
-                            child: ListView.builder(
-                              itemCount: _projects.length,
-                              itemBuilder: (context, index) {
-                                return ListTile(
-                                  dense: true,
-                                  leading: Checkbox(
-                                    value: _projects[index].isChecked,
-                                    onChanged: (bool? value) {
-                                      setState(() {
-                                        _projects[index].isChecked = value ?? false;
-                                        _filteredIssues = _filterIssuesBySelectedProjects(_issues, _getSelectedProjectKeys(_projects));
-                                      });
-                                    },
-                                  ),
-                                  title: Text(_projects[index].title),
-                                  onTap: () {
-                                    // Change the checkbox value on tapping the whole ListTile
+                        ),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: _projects.length,
+                            itemBuilder: (context, index) {
+                              return ListTile(
+                                dense: true,
+                                visualDensity: const VisualDensity(vertical: -4.0),
+                                leading: Checkbox(
+                                  value: _projects[index].isChecked,
+                                  onChanged: (bool? value) {
                                     setState(() {
-                                      _projects[index].isChecked = !_projects[index].isChecked;
+                                      _projects[index].isChecked = value ?? false;
                                       _filteredIssues = _filterIssuesBySelectedProjects(_issues, _getSelectedProjectKeys(_projects));
                                     });
                                   },
-                                );
-                              },
-                            ),
+                                ),
+                                title: Text(_projects[index].title),
+                                onTap: () {
+                                  // Change the checkbox value on tapping the whole ListTile
+                                  setState(() {
+                                    _projects[index].isChecked = !_projects[index].isChecked;
+                                    _filteredIssues = _filterIssuesBySelectedProjects(_issues, _getSelectedProjectKeys(_projects));
+                                  });
+                                },
+                              );
+                            },
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 10),
+                        TextButton(
+                          onPressed: () async {
+                            final textController = TextEditingController();
+
+                            final enteredIssueKey = await showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Add Issue'),
+                                content: TextField(
+                                  autofocus: true,
+                                  decoration: const InputDecoration(
+                                    hintText: 'Enter Issue Key',
+                                  ),
+                                  controller: textController,
+                                  onSubmitted: (value) => Navigator.pop(context, value), // Submit on ENTER
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, textController.text),
+                                    child: const Text('Add'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (enteredIssueKey != null && enteredIssueKey.isNotEmpty && !_timesheetAddedIssuesList.contains(enteredIssueKey)) {
+                              setState(() {
+                                _timesheetAddedIssuesList.add(enteredIssueKey);
+                                _saveSettings();
+                                _fullReloadIssues();
+                              });
+                            }
+                          },
+                          child: const Row(
+                            children: <Widget>[
+                              Icon(Icons.add), // Change color as needed
+                              Text('Add Issue'),
+                            ],
+                          ),
+                        ),
+                        Wrap(
+                          spacing: 8.0, // Adjust spacing between chips as needed
+                          runSpacing: 4.0, // Adjust spacing between chip rows as needed
+                          children: List.generate(_timesheetAddedIssuesList.length, (index) {
+                            final issueKey = _timesheetAddedIssuesList[index];
+                            return Chip(
+                              side: BorderSide.none,
+                              padding: EdgeInsets.zero,
+                              onDeleted: () => setState(() {
+                                debugPrint('index=$index');
+                                _timesheetAddedIssuesList.removeAt(index);
+                                _saveSettings();
+                                _fullReloadIssues();
+                              }),
+                              deleteButtonTooltipMessage: "remove issue $issueKey",
+                              deleteIconColor: Theme.of(context).primaryColorLight,
+                              label: Text(issueKey, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).primaryColorLight)),
+                              backgroundColor: Theme.of(context).primaryColorDark,
+                            );
+                          }),
+                        ),
+                      ],
                     ),
                   ),
                 ),
                 // Main content (TimesheetTable)
                 Expanded(
-                  flex: 10,
                   child: TimesheetTable(
                     issues: _issues,
                     filteredIssues: _filteredIssues,

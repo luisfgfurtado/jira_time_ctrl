@@ -31,10 +31,11 @@ Fields mergeFields(Fields fields1, Fields fields2) {
   // Compare and merge each field in Fields
   String summary = fields1.summary.isEmpty ? fields2.summary : fields1.summary;
   String projectKey = fields1.projectKey;
+  Assignee assignee = fields1.assignee;
   Worklog worklog = mergeWorklogs(fields1.worklog, fields2.worklog);
   Status status = mergeStatus(fields1.status, fields2.status);
 
-  return Fields(summary: summary, projectKey: projectKey, worklog: worklog, status: status);
+  return Fields(summary: summary, projectKey: projectKey, assignee: assignee, worklog: worklog, status: status);
 }
 
 Worklog mergeWorklogs(Worklog worklog1, Worklog worklog2) {
