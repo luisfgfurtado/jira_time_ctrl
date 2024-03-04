@@ -232,12 +232,6 @@ class SettingsPageState extends State<SettingsPage> {
                 controller: _boardIdController,
                 decoration: const InputDecoration(labelText: 'Jira Board ID'),
                 onChanged: (value) => _jiraBoardId = value,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter Jira Board ID';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 10), // give it some space
               TextFormField(

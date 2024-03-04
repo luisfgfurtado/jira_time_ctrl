@@ -59,7 +59,7 @@ class JiraApiClient {
     var client = http.Client();
     if (_apiUrl.isEmpty) return 'Failed: Invalid Jira API URL';
     if (_apiKey.isEmpty) return 'Failed: Invalid Jira API key';
-    if (_boardId.isEmpty) return 'Failed: Invalid board ID';
+    //if (_boardId.isEmpty) return 'Failed: Invalid board ID';
 
     Completer<String> completer = Completer();
 
@@ -71,7 +71,7 @@ class JiraApiClient {
 
     try {
       await client.get(
-        Uri.parse('${_apiUrl}rest/agile/1.0/board/$_boardId/sprint'),
+        Uri.parse('${_apiUrl}rest/api/latest/myself'),
         headers: {
           'Authorization': 'Bearer $_apiKey',
           'Content-Type': 'application/json',
