@@ -37,7 +37,6 @@ class IssuesPageState extends State<IssuesPage> {
         _issues = issuesData.map((issueData) => Issue.fromMap(issueData)).toList();
       });
     } catch (e) {
-      debugPrint(e.toString());
       if (!mounted) return; // check ensures widget is still present in the widget tree
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
