@@ -273,6 +273,8 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
       _worklogEntry = worklogEntry;
       _isNewWorklogEntry = false;
     });
+    _timeSpentController.text = getSpentTimeFormatted(_worklogEntry.timeSpentSeconds);
+    _startTimeController.text = formatTimeOfDay(_worklogEntry.started);
   }
 
   Future<WorklogEntry> _reloadWorklogEntry(WorklogEntry worklogEntry) async {
