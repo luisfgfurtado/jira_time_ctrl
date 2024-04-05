@@ -13,13 +13,9 @@ class WorklogDetailDialog extends StatefulWidget {
   final Issue issue;
   final DateTime date;
   final JiraApiClient jiraApiClient;
+  final int totalWorklogMinutes;
 
-  const WorklogDetailDialog({
-    Key? key,
-    required this.issue,
-    required this.date,
-    required this.jiraApiClient,
-  }) : super(key: key);
+  const WorklogDetailDialog({Key? key, required this.issue, required this.date, required this.jiraApiClient, this.totalWorklogMinutes = 0}) : super(key: key);
 
   @override
   WorklogDetailDialogState createState() => WorklogDetailDialogState();
@@ -27,13 +23,18 @@ class WorklogDetailDialog extends StatefulWidget {
 
 class WorklogDetailDialogState extends State<WorklogDetailDialog> {
   final _formKey = GlobalKey<FormState>();
-  late MaskTextInputFormatter _timeFormatter;
+  final MaskTextInputFormatter _timeFormatter = MaskTextInputFormatter(mask: '##:##');
+  final _timeSpentController = TextEditingController();
+  final _startTimeController = TextEditingController();
+  final FocusNode _timeSpentFocusNode = FocusNode();
+  final FocusNode _startTimeFocusNode = FocusNode();
   late WorklogEntry _worklogEntry;
   late String _remainingEstimate;
   late String _remainingOption;
-  late bool _isNewWorklogEntry;
-  late List<String> _commentHistory = [];
-  bool _isLoading = false;
+  bool _isNewWorklogEntry = true;
+  List<String> _commentHistory = [];
+  int _stdHoursDay = 8;
+  bool _isLoading = true;
 
   final Map<String, String> _remainingOptions = {
     'new': 'Sets the estimate to a specific value',
@@ -45,8 +46,29 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
   @override
   void initState() {
     super.initState();
-    _loadSettings();
+
+    // Initialize and set up listeners for time spent
+    _setupTimeController(_timeSpentController, _timeSpentFocusNode);
+
+    // Initialize and set up listeners for start time
+    _setupTimeController(_startTimeController, _startTimeFocusNode);
+
+    _generalInit();
+  }
+
+  @override
+  void dispose() {
+    _timeSpentController.dispose();
+    _startTimeController.dispose();
+    _timeSpentFocusNode.dispose();
+    _startTimeFocusNode.dispose();
+    super.dispose();
+  }
+
+  _generalInit() async {
+    await _loadSettings();
     _newWorklogEntry();
+    setState(() => _isLoading = false);
   }
 
   _loadSettings() async {
@@ -54,6 +76,7 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
     setState(() {
       //_worklogEntry.timeSpentSeconds = prefs.getInt('${widget.issue.key}_timeSpentSeconds') ?? 0;
       _commentHistory = prefs.getStringList('${widget.issue.key}_comment_history') ?? [];
+      _stdHoursDay = prefs.getInt('stdHoursDay') ?? _stdHoursDay;
     });
   }
 
@@ -70,6 +93,7 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
   }
 
   void _newWorklogEntry() {
+    int timeSpentSeconds = _stdHoursDay > 0 && widget.totalWorklogMinutes < _stdHoursDay * 60 ? ((_stdHoursDay * 60) - widget.totalWorklogMinutes) * 60 : 0;
     setState(() {
       _worklogEntry = WorklogEntry(
         self: '',
@@ -77,16 +101,92 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
         comment: '',
         started: DateTime.now(),
         timeSpent: '0',
-        timeSpentSeconds: 0,
+        timeSpentSeconds: timeSpentSeconds,
         issueId: widget.issue.id,
         author: null,
         updateAuthor: null,
       );
-      _timeFormatter = MaskTextInputFormatter(mask: '##:##');
       _isNewWorklogEntry = true;
       _remainingEstimate = '00:00';
       _remainingOption = 'auto';
+      _timeSpentController.text = getSpentTimeFormatted(_worklogEntry.timeSpentSeconds);
+      _startTimeController.text = formatTimeOfDay(_worklogEntry.started);
     });
+  }
+
+  void _setupTimeController(TextEditingController controller, FocusNode focusNode) {
+    focusNode.addListener(() {
+      if (focusNode.hasFocus) {
+        controller.selection = TextSelection(baseOffset: 0, extentOffset: controller.text.length);
+      } else {
+        _formatTimeText(controller);
+      }
+    });
+
+    controller.addListener(() {
+      String currentText = controller.text.replaceAll(':', '');
+
+      // Limit to 4 digits
+      if (currentText.length > 4) {
+        currentText = currentText.substring(0, 4);
+      }
+
+      // Insert colon after the first two digits
+      if (currentText.length > 2) {
+        if (currentText.length < 4) {
+          currentText = '${currentText.substring(0, 1)}:${currentText.substring(1)}';
+        } else {
+          currentText = '${currentText.substring(0, 2)}:${currentText.substring(2)}';
+        }
+      }
+
+      if (controller.text != currentText) {
+        controller.value = TextEditingValue(
+          text: currentText,
+          selection: TextSelection.collapsed(offset: currentText.length),
+        );
+      }
+    });
+  }
+
+  void _formatTimeText(TextEditingController controller) {
+    //controller.removeListener(() => _controllerListener(controller));
+    String currentText = controller.text.replaceAll(':', '');
+
+    if (currentText.length > 4) {
+      // Truncate to 4 characters to ensure HH:MM format
+      currentText = currentText.substring(0, 4);
+    }
+
+    while (currentText.length < 4) {
+      // Prepend zeros to the left to make it 4 digits
+      currentText = '0$currentText';
+    }
+
+    // Split the string into hour and minute parts
+    String hourPart = currentText.substring(0, 2);
+    String minutePart = currentText.substring(2);
+
+    // Validate hour and minute parts
+    int hour = int.tryParse(hourPart) ?? 0;
+    int minute = int.tryParse(minutePart) ?? 0;
+
+    if (hour > 23) hour = 23; // Limit hour to 23
+    if (minute > 59) {
+      if (hour > 0) {
+        minute = 59; // Limit minute to 59
+      } else {
+        hour = 1;
+        minute = minute - 60; // Convert minutes to time
+      }
+    }
+
+    // Reconstruct the formatted time text
+    String formattedText = '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+    controller.text = formattedText;
+
+    // Add the listener back
+    //controller.addListener(() => _controllerListener(controller));
   }
 
   bool _validateTime(String value) {
@@ -127,7 +227,7 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
       _formKey.currentState!.save();
       if (!_commentHistory.contains(_worklogEntry.comment)) {
         _commentHistory.add(_worklogEntry.comment);
-        if (_commentHistory.length > 4) _commentHistory.removeAt(0); // Remove the oldest entry
+        if (_commentHistory.length > 5) _commentHistory.removeAt(0); // Remove the oldest entry
       }
       _saveSettings();
       try {
@@ -145,7 +245,9 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
           Navigator.of(context).pop({'action': 'save', 'result': result});
         }
       } catch (e) {
-        _worklogEntry = await _reloadWorklogEntry(_worklogEntry);
+        if (_worklogEntry.id != 0) {
+          _worklogEntry = await _reloadWorklogEntry(_worklogEntry);
+        }
         if (!mounted) return; // check ensures widget is still present in the widget tree
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error saving worklog: $e')),
@@ -212,6 +314,9 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
               return true; // Returning true allows the dialog to be closed
             },
         child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.0), // Rounded corners
+          ),
           title: Text('Worklog ${widget.issue.key}'),
           contentPadding: const EdgeInsets.all(15),
           titlePadding: const EdgeInsets.only(top: 10, left: 15),
@@ -221,7 +326,7 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Row(
-                children: [Text(widget.issue.fields.summary), const Spacer(), Text(formatDate(widget.date))],
+                children: [Text(widget.issue.fields.summary), const Spacer(), Text(formatDate2(widget.date))],
               ),
               Stack(children: [
                 Card(
@@ -232,7 +337,16 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
                       children: [
                         _buildWorklogsList(),
                         const SizedBox(height: 10),
-                        _buildFormContent(),
+                        if (_isLoading)
+                          AbsorbPointer(
+                            child: Container(
+                              color: Colors.black.withOpacity(0.5),
+                              alignment: Alignment.center,
+                              child: const CircularProgressIndicator(),
+                            ),
+                          )
+                        else
+                          _buildFormContent(),
                       ],
                     ),
                   ),
@@ -296,12 +410,12 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
           children: [
             Expanded(
               child: TextFormField(
-                inputFormatters: [_timeFormatter],
                 decoration: const InputDecoration(
                   hintText: 'HH:MM',
                   labelText: 'Time Spent',
                 ),
-                controller: TextEditingController(text: getSpentTimeFormatted(_worklogEntry.timeSpentSeconds)),
+                controller: _timeSpentController,
+                focusNode: _timeSpentFocusNode,
                 validator: (value) {
                   if (value == null || value.isEmpty || !_validateTime(value)) {
                     return 'Please enter valid time (hh:mm)';
@@ -318,8 +432,8 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
                   hintText: 'HH:MM',
                   labelText: 'Start Time',
                 ),
-                controller: TextEditingController(text: formatTimeOfDay(_worklogEntry.started)),
-                inputFormatters: [_timeFormatter],
+                controller: _startTimeController,
+                focusNode: _startTimeFocusNode,
                 validator: (value) {
                   if (value == null || value.isEmpty || !_validateTime(value)) {
                     return 'Please enter valid time (hh:mm)';

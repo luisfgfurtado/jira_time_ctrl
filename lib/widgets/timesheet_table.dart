@@ -37,6 +37,7 @@ class _TimesheetTableState extends State<TimesheetTable> {
   bool _isLoading = false;
   final _colKeyWidth = 100.0;
   final _colDataWidth = 70.0;
+  late Map<String, int> _totalWorklog;
 
   @override
   void initState() {
@@ -156,24 +157,24 @@ class _TimesheetTableState extends State<TimesheetTable> {
     }).toList();
 
     // Add the total row
-    var totalWorklog = _computeTotalWorklogByDay();
+    _totalWorklog = _computeTotalWorklogByDay();
     List<DataCell> totalCells = [
       DataCell(SizedBox(width: _colKeyWidth, child: const Text(''))), // Empty cell for 'Key' column
       DataCell(SizedBox(width: colSummaryWidth, child: const Text('Total', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold)))),
     ];
 
     totalCells.addAll([
-      _buildTotalCell(Issue.getFormattedWorklogTime(totalWorklog['Monday']!), 0),
-      _buildTotalCell(Issue.getFormattedWorklogTime(totalWorklog['Tuesday']!), 1),
-      _buildTotalCell(Issue.getFormattedWorklogTime(totalWorklog['Wednesday']!), 2),
-      _buildTotalCell(Issue.getFormattedWorklogTime(totalWorklog['Thursday']!), 3),
-      _buildTotalCell(Issue.getFormattedWorklogTime(totalWorklog['Friday']!), 4),
+      _buildTotalCell(Issue.getFormattedWorklogTime(_totalWorklog['Monday']!), 0),
+      _buildTotalCell(Issue.getFormattedWorklogTime(_totalWorklog['Tuesday']!), 1),
+      _buildTotalCell(Issue.getFormattedWorklogTime(_totalWorklog['Wednesday']!), 2),
+      _buildTotalCell(Issue.getFormattedWorklogTime(_totalWorklog['Thursday']!), 3),
+      _buildTotalCell(Issue.getFormattedWorklogTime(_totalWorklog['Friday']!), 4),
     ]);
 
     if (widget.showWeekend) {
       totalCells.addAll([
-        _buildTotalCell(Issue.getFormattedWorklogTime(totalWorklog['Saturday']!), 5),
-        _buildTotalCell(Issue.getFormattedWorklogTime(totalWorklog['Sunday']!), 6),
+        _buildTotalCell(Issue.getFormattedWorklogTime(_totalWorklog['Saturday']!), 5),
+        _buildTotalCell(Issue.getFormattedWorklogTime(_totalWorklog['Sunday']!), 6),
       ]);
     }
 
@@ -210,6 +211,7 @@ class _TimesheetTableState extends State<TimesheetTable> {
   }
 
   Future<void> _showWorklogDetailDialog(BuildContext context, Issue issue, DateTime date) async {
+    String weekday = DateFormat('EEEE').format(date);
     final result = await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -217,6 +219,7 @@ class _TimesheetTableState extends State<TimesheetTable> {
           issue: issue,
           date: date,
           jiraApiClient: widget.jiraApiClient,
+          totalWorklogMinutes: _totalWorklog[weekday]!,
         );
       },
     );

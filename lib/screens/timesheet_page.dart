@@ -10,7 +10,8 @@ import '../widgets/action_switch.dart';
 import '../widgets/timesheet_table.dart';
 
 class TimesheetPage extends StatefulWidget {
-  const TimesheetPage({Key? key}) : super(key: key);
+  const TimesheetPage({super.key});
+  //const TimesheetPage({Key? key}) : super(key: key);
 
   @override
   TimesheetPageState createState() => TimesheetPageState();
@@ -114,8 +115,10 @@ class TimesheetPageState extends State<TimesheetPage> {
       });
     } catch (e) {
       //setState(() => _isLoading = false); // Set loading to false if error occurs
-      _showHelpText(e.toString());
-      debugPrint(e.toString());
+      if (!e.toString().contains("401") && !e.toString().contains("400")) {
+        _showHelpText(e.toString());
+      }
+      //debugPrint(e.toString());
     }
   }
 
@@ -163,7 +166,6 @@ class TimesheetPageState extends State<TimesheetPage> {
     }
     jql = jql.replaceAll('#STARTDATE#', startDate).replaceAll('#ENDDATE#', endDate);
     try {
-      debugPrint(jql);
       List<dynamic> issuesData = await _jiraApiClient.getIssues(jql);
       List<Issue> issues = issuesData.map((issueData) => Issue.fromMap(issueData, _jiraApiUserKey)).toList();
       issues = mergeIssueLists(issues, _issues);
@@ -185,8 +187,12 @@ class TimesheetPageState extends State<TimesheetPage> {
       });
     } catch (e) {
       //setState(() => _isLoading = false); // Set loading to false if error occurs
-      debugPrint(e.toString());
-      _showHelpText(e.toString());
+      if (e.toString().contains("401") || e.toString().contains("400")) {
+        _showHelpText("Authentication error.\nCheck the settings to make sure your Jira API key is configured correctly.");
+      } else {
+        _showHelpText(e.toString());
+      }
+      //debugPrint(e.toString());
     }
   }
 
