@@ -22,6 +22,7 @@ class SettingsPageState extends State<SettingsPage> {
   final _timesheetAddedIssuesController = TextEditingController();
   final _timesheetJQLController = TextEditingController();
   final _tempoWorklogsPeriodController = TextEditingController();
+  final _stdHoursDayController = TextEditingController();
   String _jiraApiUrl = '';
   String _jiraApiKey = '';
   String _jiraApiUserKey = '';
@@ -30,6 +31,7 @@ class SettingsPageState extends State<SettingsPage> {
   bool _jiraJqlHasError = false;
   String _jiraTimesheetJQL = '(worklogDate >= #STARTDATE# AND worklogDate <= #ENDDATE# AND worklogAuthor = currentuser())';
   int _tempoWorklogsPeriod = 21;
+  int _stdHoursDay = 8;
 
   late String _appName;
   late String _packageName;
@@ -69,6 +71,7 @@ class SettingsPageState extends State<SettingsPage> {
       _jiraTimesheetAddedIssues = prefs.getString('jiraTimesheetAddedIssues') ?? _jiraTimesheetAddedIssues;
       _jiraTimesheetJQL = prefs.getString('jiraTimesheetJQL') ?? _jiraTimesheetJQL;
       _tempoWorklogsPeriod = prefs.getInt('tempoWorklogsPeriod') ?? _tempoWorklogsPeriod;
+      _stdHoursDay = prefs.getInt('stdHoursDay') ?? _stdHoursDay;
 
       _apiUrlController.text = _jiraApiUrl;
       _apiKeyController.text = _jiraApiKey;
@@ -76,6 +79,7 @@ class SettingsPageState extends State<SettingsPage> {
       _timesheetAddedIssuesController.text = _jiraTimesheetAddedIssues;
       _timesheetJQLController.text = _jiraTimesheetJQL;
       _tempoWorklogsPeriodController.text = _tempoWorklogsPeriod.toString();
+      _stdHoursDayController.text = _stdHoursDay.toString();
 
       _jiraJqlHasError = prefs.getBool('jiraJqlHasError') ?? false;
     });
@@ -102,6 +106,7 @@ class SettingsPageState extends State<SettingsPage> {
       prefs.setString('jiraTimesheetJQL', _jiraTimesheetJQL);
       prefs.setBool('jiraJqlHasError', _jiraJqlHasError);
       prefs.setInt('tempoWorklogsPeriod', _tempoWorklogsPeriod);
+      prefs.setInt('stdHoursDay', _stdHoursDay);
 
       // debugPrint("jiraApiUrl: ${prefs.getString('jiraApiUrl')}");
       // debugPrint("jiraApiKey: ${prefs.getString('jiraApiKey')}");
@@ -260,6 +265,21 @@ class SettingsPageState extends State<SettingsPage> {
                   int? v = int.tryParse(value ?? '');
                   if (value == null || value.isEmpty || v == null || v < 7 || v > 60) {
                     return 'Please enter valid number between 7 and 60.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20), // give it some space
+              TextFormField(
+                controller: _stdHoursDayController,
+                decoration: const InputDecoration(labelText: 'Standard Hours per Day (hours)'),
+                onChanged: (value) => _stdHoursDay = int.tryParse(value) ?? _stdHoursDay,
+                validator: (value) {
+                  int? v = int.tryParse(value ?? '');
+                  if (value != null && value.isNotEmpty && v == null) {
+                    return 'Please enter a integer number of hours.';
+                  } else if (value != null && value.isNotEmpty && (v! < 1 || v > 24)) {
+                    return 'Please enter valid number between 1 and 24 or leave blank to disable the feature.';
                   }
                   return null;
                 },
