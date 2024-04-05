@@ -5,6 +5,10 @@ String formatDate(DateTime dateTime) {
   return "${dateTime.year.toString().padLeft(4, '0')}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}";
 }
 
+String formatDate2(DateTime dateTime) {
+  return "(${DateFormat('EEE').format(dateTime)}) ${dateTime.day.toString().padLeft(2, '0')}-${DateFormat('MMM').format(dateTime)}";
+}
+
 bool isToday(DateTime date, [int addDays = 0]) {
   final DateTime today = DateTime.now();
   final DateTime targetDay = date.add(Duration(days: addDays));
