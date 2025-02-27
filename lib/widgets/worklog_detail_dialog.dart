@@ -37,6 +37,7 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
   final _timeSpentController = TextEditingController();
   final _startTimeController = TextEditingController();
   Map<String, TextEditingController> controllers = {};
+  Map<String, bool> _checkboxValues = {};
   final FocusNode _timeSpentFocusNode = FocusNode();
   final FocusNode _startTimeFocusNode = FocusNode();
   late WorklogEntry _worklogEntry;
@@ -64,6 +65,8 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
     // Initialize and set up listeners for start time
     _setupTimeController(_startTimeController, _startTimeFocusNode);
 
+    _initializeCheckboxValues();
+
     _generalInit();
   }
 
@@ -89,6 +92,14 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
       _commentHistory = prefs.getStringList('${widget.issue.key}_comment_history') ?? [];
       _stdHoursDay = prefs.getInt('stdHoursDay') ?? _stdHoursDay;
     });
+  }
+
+  void _initializeCheckboxValues() {
+    for (var attr in widget.myTimesheetInfo.customAttributes) {
+      if (attr.type == "Checkbox") {
+        _checkboxValues[attr.key] = false; // Inicializa todos os checkboxes como desmarcados
+      }
+    }
   }
 
   _saveSettings() async {
@@ -247,12 +258,17 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
           var value = _getCustomAttributeValueFromForm(attr.key);
 
           // Encontrar ou criar um novo CustomAttributeValue
-          var existingAttr = _worklogEntry.customAttributeValues?.firstWhere((a) => a.customAttributeID == attr.id, orElse: () => null);
+          var existingAttr = _worklogEntry.customAttributeValues?.firstWhere((a) => a.customAttributeID == attr.id,
+              orElse: () => CustomAttributeValue(
+                    customAttributeKey: '',
+                    customAttributeID: -1, // Use um ID inválido ou zero para indicar um novo valor
+                    worklogId: _worklogEntry.id,
+                    worklogDate: _worklogEntry.started,
+                    value: '',
+                    id: null,
+                  ));
 
-          if (existingAttr != null) {
-            // Atualizar valor existente
-            existingAttr.value = value;
-          } else {
+          if (existingAttr?.customAttributeID == -1) {
             // Adicionar novo valor se não existir
             _worklogEntry.customAttributeValues ??= []; // Garante que a lista foi inicializada
             _worklogEntry.customAttributeValues!.add(CustomAttributeValue(
@@ -263,6 +279,9 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
               value: value,
               id: null, // Suponha que id é gerado pelo servidor ou não necessário
             ));
+          } else {
+            // Atualizar valor existente
+            existingAttr?.value = value;
           }
         }
       }
@@ -663,7 +682,6 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
 
   List<Widget> _buildCustomAttributesForm() {
     List<Widget> fields = [];
-
     for (var attr in widget.myTimesheetInfo.customAttributes
         .where((attr) => attr.active && (attr.projectScope == null || attr.projectScope!.contains(widget.issue.fields.projectKey)))) {
       if (attr.type == "List") {
@@ -672,11 +690,11 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
           SizedBox(
             width: 200,
             child: DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: attr.label,
-              ),
-              value: null,
-              onChanged: (String? newValue) {},
+              decoration: InputDecoration(labelText: attr.label),
+              value: null, // Aqui você pode usar uma lógica para definir o valor inicial se necessário
+              onChanged: (String? newValue) {
+                // Atualize o valor no estado ou modelo de dados
+              },
               items: options.map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
@@ -692,16 +710,18 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
             width: 200,
             child: CheckboxListTile(
               title: Text(attr.label),
-              value: false,
+              value: _checkboxValues[attr.key], // Usa o mapa para definir o valor
               dense: true,
-              controller: controllers[attr.key],
-              onChanged: (bool? value) {},
+              onChanged: (bool? value) {
+                setState(() {
+                  _checkboxValues[attr.key] = value ?? false;
+                });
+              },
             ),
           )
         ]));
       }
     }
-
     return fields;
   }
 
