@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:intl/intl.dart';
+import 'package:jira_time_ctrl/models/custom_attribute.dart';
 
 class Issue {
   String expand;
@@ -208,6 +209,7 @@ class WorklogEntry {
   String issueId;
   Author? author;
   Author? updateAuthor;
+  List<CustomAttributeValue>? customAttributeValues;
 
   WorklogEntry({
     required this.self,
@@ -232,6 +234,7 @@ class WorklogEntry {
       'issueId': issueId,
       'author': author,
       'updateAuthor': updateAuthor,
+      'customAttributeValues': customAttributeValues,
     };
   }
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:jira_time_ctrl/models/issue_utils.dart';
+import 'package:jira_time_ctrl/models/my_timesheet_info.dart';
 import 'package:jira_time_ctrl/services/tempo_api_client.dart';
+import 'package:jira_time_ctrl/services/timesheet_api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/issue.dart';
@@ -20,6 +22,8 @@ class TimesheetPage extends StatefulWidget {
 class TimesheetPageState extends State<TimesheetPage> {
   late JiraApiClient _jiraApiClient;
   late TempoApiClient _tempoApiClient;
+  late TimesheetApiClient _timesheetApiClient;
+  late MyTimesheetInfo _myTimesheetInfo;
   List<Issue> _issues = [];
   List<Issue> _filteredIssues = [];
   List<ProjectItem> _projects = [];
@@ -67,6 +71,15 @@ class TimesheetPageState extends State<TimesheetPage> {
   Future<void> _initializeClient() async {
     _jiraApiClient = await JiraApiClient.create();
     _tempoApiClient = await TempoApiClient.create();
+    _timesheetApiClient = await TimesheetApiClient.create();
+    _myTimesheetInfo = MyTimesheetInfo(
+      startDate: null,
+      endDate: null,
+      maxHoursPerDay: 24,
+      addedIssues: [],
+      customAttributes: [],
+      customAttributeValues: [],
+    );
   }
 
   _saveSettings() async {
@@ -122,11 +135,33 @@ class TimesheetPageState extends State<TimesheetPage> {
     }
   }
 
+  Future<void> _loadMyTimeSheetInfo() async {
+    debugPrint("loadMyTimeSheetInfo");
+    try {
+      MyTimesheetInfo myTimesheetInfo = await _timesheetApiClient.getMyTimesheetInfo();
+      setState(() {
+        _myTimesheetInfo = myTimesheetInfo;
+      });
+    } catch (e) {
+      if (!e.toString().contains("401") && !e.toString().contains("400")) {
+        _showHelpText(e.toString());
+      }
+    }
+  }
+
   Future<void> _fullReloadIssues() async {
+    debugPrint("fullReloadIssues");
     if (_startDate == '' || _endDate == '') return;
     setState(() => _isLoading = true); // Set loading to true
+    await _loadMyTimeSheetInfo();
     await _loadTempoWorklogIssues();
     await loadIssues(_startDate, _endDate);
+
+    // Verifica se existem customAttributeValues e se a lista tem elementos
+    if (_myTimesheetInfo.customAttributeValues.isNotEmpty) {
+      addIssuesCustomAttributeValues(_issues, _myTimesheetInfo.customAttributeValues);
+    }
+
     setState(() => _isLoading = false); // Set loading to false
   }
 
@@ -395,6 +430,7 @@ class TimesheetPageState extends State<TimesheetPage> {
                     filteredIssues: _filteredIssues,
                     showWeekend: _showWeekend,
                     jiraApiClient: _jiraApiClient,
+                    myTimesheetInfo: _myTimesheetInfo,
                     loadIssues: loadIssues, // Your existing callback
                     onUpdateIssue: updateIssue, // Your existing callback
                     tempoWorklogsPeriod: _tempoWorklogsPeriod, //Tempo Worklog Period (last n of days)

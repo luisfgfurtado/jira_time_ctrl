@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:jira_time_ctrl/models/issue_utils.dart';
+import 'package:jira_time_ctrl/models/my_timesheet_info.dart';
 import '../models/issue.dart';
 import '../services/jira_api_client.dart';
 import '../utils/dateformat.dart';
@@ -14,6 +15,7 @@ class TimesheetTable extends StatefulWidget {
   final List<Issue> filteredIssues;
   final bool showWeekend;
   final JiraApiClient jiraApiClient;
+  final MyTimesheetInfo myTimesheetInfo;
   final int tempoWorklogsPeriod;
 
   const TimesheetTable({
@@ -22,6 +24,7 @@ class TimesheetTable extends StatefulWidget {
     required this.filteredIssues,
     required this.showWeekend,
     required this.jiraApiClient,
+    required this.myTimesheetInfo,
     required this.loadIssues,
     required this.onUpdateIssue,
     required this.tempoWorklogsPeriod,
@@ -219,6 +222,7 @@ class _TimesheetTableState extends State<TimesheetTable> {
           issue: issue,
           date: date,
           jiraApiClient: widget.jiraApiClient,
+          myTimesheetInfo: widget.myTimesheetInfo,
           totalWorklogMinutes: _totalWorklog[weekday]!,
         );
       },

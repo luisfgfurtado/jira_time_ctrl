@@ -35,10 +35,10 @@ class JiraApiClient {
       _boardId = prefs.getString('jiraBoardId') ?? '';
       _jqlHasError = prefs.getBool('jiraJqlHasError') ?? false;
 
-      // debugPrint('apiUrl: $_apiUrl');
-      // debugPrint('apiKey: $_apiKey');
-      // debugPrint('boardId: $_boardId');
-      // debugPrint('jqlHasError: $_jqlHasError');
+      debugPrint('apiUrl: $_apiUrl');
+      debugPrint('apiKey: $_apiKey');
+      debugPrint('boardId: $_boardId');
+      debugPrint('jqlHasError: $_jqlHasError');
     } else {
       // Handle the scenario when local storage is not available
       throw Exception("local storage is disabled");

@@ -1,3 +1,5 @@
+import 'package:jira_time_ctrl/models/custom_attribute.dart';
+
 import 'issue.dart';
 
 List<Issue> mergeIssueLists(List<Issue> list1, List<Issue> list2) {
@@ -71,6 +73,21 @@ void replaceWorklogEntry(Worklog worklog, WorklogEntry worklogEntry) {
 
 void removeWorklogEntry(Worklog worklog, int entryId) {
   worklog.worklogs.removeWhere((entry) => entry.id == entryId);
+}
+
+void addIssuesCustomAttributeValues(List<Issue> issues, List<CustomAttributeValue> customAttributeValues) {
+  // Criar um mapa para acesso rápido aos valores de atributos personalizados por worklogId
+  Map<int, List<CustomAttributeValue>> customAttributeValueMap = {};
+  for (var value in customAttributeValues) {
+    customAttributeValueMap.putIfAbsent(value.worklogId, () => []).add(value);
+  }
+
+  // Iterar sobre cada issue e seus worklogs para adicionar os valores dos atributos personalizados
+  for (var issue in issues) {
+    for (var worklog in issue.fields.worklog.worklogs) {
+      worklog.customAttributeValues = customAttributeValueMap[worklog.id] ?? [];
+    }
+  }
 }
 
 Status mergeStatus(Status status1, Status status2) {

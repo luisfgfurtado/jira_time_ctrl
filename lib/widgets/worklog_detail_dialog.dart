@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:jira_time_ctrl/models/custom_attribute.dart';
+import 'package:jira_time_ctrl/models/my_timesheet_info.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 //import 'package:shared_preferences/shared_preferences.dart';
@@ -13,9 +15,17 @@ class WorklogDetailDialog extends StatefulWidget {
   final Issue issue;
   final DateTime date;
   final JiraApiClient jiraApiClient;
+  final MyTimesheetInfo myTimesheetInfo;
   final int totalWorklogMinutes;
 
-  const WorklogDetailDialog({Key? key, required this.issue, required this.date, required this.jiraApiClient, this.totalWorklogMinutes = 0}) : super(key: key);
+  const WorklogDetailDialog({
+    Key? key,
+    required this.issue,
+    required this.date,
+    required this.jiraApiClient,
+    required this.myTimesheetInfo,
+    this.totalWorklogMinutes = 0,
+  }) : super(key: key);
 
   @override
   WorklogDetailDialogState createState() => WorklogDetailDialogState();
@@ -26,6 +36,7 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
   final MaskTextInputFormatter _timeFormatter = MaskTextInputFormatter(mask: '##:##');
   final _timeSpentController = TextEditingController();
   final _startTimeController = TextEditingController();
+  Map<String, TextEditingController> controllers = {};
   final FocusNode _timeSpentFocusNode = FocusNode();
   final FocusNode _startTimeFocusNode = FocusNode();
   late WorklogEntry _worklogEntry;
@@ -225,6 +236,37 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       _formKey.currentState!.save();
+
+      // Inicializa a lista se for null
+      _worklogEntry.customAttributeValues ??= [];
+
+      // Coletar e adicionar/atualizar valores dos custom attributes
+      for (var attr in widget.myTimesheetInfo.customAttributes) {
+        if (attr.active && (attr.projectScope == null || attr.projectScope!.contains(widget.issue.fields.projectKey))) {
+          // Obter valor do formulário
+          var value = _getCustomAttributeValueFromForm(attr.key);
+
+          // Encontrar ou criar um novo CustomAttributeValue
+          var existingAttr = _worklogEntry.customAttributeValues?.firstWhere((a) => a.customAttributeID == attr.id, orElse: () => null);
+
+          if (existingAttr != null) {
+            // Atualizar valor existente
+            existingAttr.value = value;
+          } else {
+            // Adicionar novo valor se não existir
+            _worklogEntry.customAttributeValues ??= []; // Garante que a lista foi inicializada
+            _worklogEntry.customAttributeValues!.add(CustomAttributeValue(
+              customAttributeKey: attr.key,
+              customAttributeID: attr.id,
+              worklogId: _worklogEntry.id,
+              worklogDate: _worklogEntry.started,
+              value: value,
+              id: null, // Suponha que id é gerado pelo servidor ou não necessário
+            ));
+          }
+        }
+      }
+
       if (!_commentHistory.contains(_worklogEntry.comment)) {
         _commentHistory.add(_worklogEntry.comment);
         if (_commentHistory.length > 5) _commentHistory.removeAt(0); // Remove the oldest entry
@@ -256,6 +298,13 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  dynamic _getCustomAttributeValueFromForm(String attributeKey) {
+    // Esta função assume que você tem um mapa ou similar onde os controladores estão guardados
+    // e acessa diretamente o texto do controlador correspondente ao attributeKey.
+    TextEditingController? controller = controllers[attributeKey];
+    return controller?.text; // Retorna o texto atual do controlador
   }
 
   void _editWorklog(WorklogEntry worklogEntry) async {
@@ -553,6 +602,7 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
                 : const SizedBox(width: 12),
           ],
         ),
+        ..._buildCustomAttributesForm()
       ]),
     );
   }
@@ -609,6 +659,50 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
         ),
       ]),
     ];
+  }
+
+  List<Widget> _buildCustomAttributesForm() {
+    List<Widget> fields = [];
+
+    for (var attr in widget.myTimesheetInfo.customAttributes
+        .where((attr) => attr.active && (attr.projectScope == null || attr.projectScope!.contains(widget.issue.fields.projectKey)))) {
+      if (attr.type == "List") {
+        var options = List<String>.from(attr.config['options'] as List);
+        fields.add(Row(children: [
+          SizedBox(
+            width: 200,
+            child: DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                labelText: attr.label,
+              ),
+              value: null,
+              onChanged: (String? newValue) {},
+              items: options.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            ),
+          )
+        ]));
+      } else if (attr.type == "Checkbox") {
+        fields.add(Row(children: [
+          SizedBox(
+            width: 200,
+            child: CheckboxListTile(
+              title: Text(attr.label),
+              value: false,
+              dense: true,
+              controller: controllers[attr.key],
+              onChanged: (bool? value) {},
+            ),
+          )
+        ]));
+      }
+    }
+
+    return fields;
   }
 
   Widget _buildLoadingOverlay() {
