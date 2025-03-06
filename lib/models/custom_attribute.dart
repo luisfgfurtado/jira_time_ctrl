@@ -40,7 +40,7 @@ class CustomAttributeValue {
   int customAttributeID;
   int worklogId;
   DateTime? worklogDate;
-  String value;
+  dynamic value;
   int? id;
 
   CustomAttributeValue({

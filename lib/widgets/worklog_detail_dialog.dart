@@ -66,6 +66,7 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
     _setupTimeController(_startTimeController, _startTimeFocusNode);
 
     _initializeCheckboxValues();
+    _initializeDropdownControllers();
 
     _generalInit();
   }
@@ -98,6 +99,14 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
     for (var attr in widget.myTimesheetInfo.customAttributes) {
       if (attr.type == "Checkbox") {
         _checkboxValues[attr.key] = false; // Inicializa todos os checkboxes como desmarcados
+      }
+    }
+  }
+
+  void _initializeDropdownControllers() {
+    for (var attr in widget.myTimesheetInfo.customAttributes) {
+      if (attr.type == "List") {
+        controllers[attr.key] = TextEditingController();
       }
     }
   }
@@ -255,7 +264,8 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
       for (var attr in widget.myTimesheetInfo.customAttributes) {
         if (attr.active && (attr.projectScope == null || attr.projectScope!.contains(widget.issue.fields.projectKey))) {
           // Obter valor do formulário
-          var value = _getCustomAttributeValueFromForm(attr.key);
+          var value = _getCustomAttributeValueFromForm(attr.key, attr.type);
+          if (value == null) continue;
 
           // Encontrar ou criar um novo CustomAttributeValue
           var existingAttr = _worklogEntry.customAttributeValues?.firstWhere((a) => a.customAttributeID == attr.id,
@@ -286,17 +296,24 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
         }
       }
 
+      // Add the worklog comment to local comment history, to be used in future worklogs
       if (!_commentHistory.contains(_worklogEntry.comment)) {
         _commentHistory.add(_worklogEntry.comment);
         if (_commentHistory.length > 5) _commentHistory.removeAt(0); // Remove the oldest entry
       }
       _saveSettings();
       try {
+        //update worklog
         dynamic result = await widget.jiraApiClient.upInsertWorklogEntry(
           worklogEntry: _worklogEntry,
           adjustEstimate: _remainingOption,
           newEstimate: _remainingEstimate,
         );
+        //update custom attributes
+        if (_worklogEntry.customAttributeValues!.isNotEmpty && result['id'] != null) {
+          await widget.jiraApiClient.upInsertWorklogCustomAttributes(worklogEntry: _worklogEntry, worklogId: int.parse(result['id']));
+        }
+
         if (!mounted) return; // check ensures widget is still present in the widget tree
         // Pass the updated issue object when popping the screen
         if (_worklogEntry.id == 0) {
@@ -319,11 +336,13 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
     }
   }
 
-  dynamic _getCustomAttributeValueFromForm(String attributeKey) {
-    // Esta função assume que você tem um mapa ou similar onde os controladores estão guardados
-    // e acessa diretamente o texto do controlador correspondente ao attributeKey.
-    TextEditingController? controller = controllers[attributeKey];
-    return controller?.text; // Retorna o texto atual do controlador
+  dynamic _getCustomAttributeValueFromForm(String attributeKey, String attributeType) {
+    if (attributeType == "List") {
+      return controllers[attributeKey]?.text; // Retorna o texto atual do Dropdown
+    } else if (attributeType == "Checkbox") {
+      return _checkboxValues[attributeKey]; // Retorna o valor booleano do Checkbox
+    }
+    return null;
   }
 
   void _editWorklog(WorklogEntry worklogEntry) async {
@@ -331,18 +350,53 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
       try {
         worklogEntry = await _reloadWorklogEntry(worklogEntry);
       } catch (e) {
-        if (!mounted) return; // check ensures widget is still present in the widget tree
+        if (!mounted) return; // Verifica se o widget ainda está presente na árvore de widgets
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error reloading worklog entry: $e')),
         );
+        return; // Retorna cedo se houver um erro
       }
     }
+
+    if (worklogEntry.customAttributeValues != null) {
+      // Limpa valores anteriores nos controllers e checkbox values
+      controllers.forEach((key, controller) {
+        controller.clear();
+      });
+      _checkboxValues.forEach((key, value) {
+        _checkboxValues[key] = false;
+      });
+
+      // Carrega novos valores nos controllers ou checkbox values apropriados
+      for (var customValue in worklogEntry.customAttributeValues!) {
+        var attr = widget.myTimesheetInfo.customAttributes.firstWhere((a) => a.id == customValue.customAttributeID,
+            orElse: () => CustomAttribute(
+                  active: false,
+                  id: -1, // Use um valor que indique que é um placeholder
+                  label: "Undefined",
+                  projectScope: null,
+                  type: "None",
+                  config: {},
+                  key: "undefined",
+                  required: false,
+                )); // Retorna um CustomAttribute de placeholder se não encontrar
+
+        if (attr != null && attr.id != -1) {
+          if (attr.type == "List") {
+            controllers[attr.key]?.text = customValue.value.toString();
+          } else if (attr.type == "Checkbox") {
+            _checkboxValues[attr.key] = bool.parse(customValue.value);
+          }
+        }
+      }
+    }
+
     setState(() {
       _worklogEntry = worklogEntry;
       _isNewWorklogEntry = false;
+      _timeSpentController.text = getSpentTimeFormatted(_worklogEntry.timeSpentSeconds);
+      _startTimeController.text = formatTimeOfDay(_worklogEntry.started);
     });
-    _timeSpentController.text = getSpentTimeFormatted(_worklogEntry.timeSpentSeconds);
-    _startTimeController.text = formatTimeOfDay(_worklogEntry.started);
   }
 
   Future<WorklogEntry> _reloadWorklogEntry(WorklogEntry worklogEntry) async {
@@ -686,14 +740,20 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
         .where((attr) => attr.active && (attr.projectScope == null || attr.projectScope!.contains(widget.issue.fields.projectKey)))) {
       if (attr.type == "List") {
         var options = List<String>.from(attr.config['options'] as List);
+        String? selectedValue = controllers[attr.key]?.text; // Pode ser null inicialmente
+        if (!options.contains(selectedValue)) {
+          selectedValue = null; // Isso garante que o valor inicial esteja na lista de opções ou seja nulo
+        }
         fields.add(Row(children: [
           SizedBox(
             width: 200,
             child: DropdownButtonFormField<String>(
               decoration: InputDecoration(labelText: attr.label),
-              value: null, // Aqui você pode usar uma lógica para definir o valor inicial se necessário
+              value: selectedValue,
               onChanged: (String? newValue) {
-                // Atualize o valor no estado ou modelo de dados
+                setState(() {
+                  controllers[attr.key]?.text = newValue ?? '';
+                });
               },
               items: options.map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
@@ -713,9 +773,11 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
               value: _checkboxValues[attr.key], // Usa o mapa para definir o valor
               dense: true,
               onChanged: (bool? value) {
-                setState(() {
-                  _checkboxValues[attr.key] = value ?? false;
-                });
+                if (value != null) {
+                  setState(() {
+                    _checkboxValues[attr.key] = value;
+                  });
+                }
               },
             ),
           )

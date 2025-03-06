@@ -354,6 +354,58 @@ class JiraApiClient {
     return completer.future;
   }
 
+  Future<dynamic> upInsertWorklogCustomAttributes({required WorklogEntry worklogEntry, required int worklogId}) async {
+    var client = http.Client();
+    if (_apiUrl.isEmpty) throw 'Failed: Invalid Jira API URL';
+    if (_apiKey.isEmpty) throw 'Failed: Invalid Jira API key';
+
+    dynamic headers = {
+      'Authorization': 'Bearer $_apiKey',
+      'Content-Type': 'application/json',
+      'X-Atlassian-Token': 'no-check',
+    };
+
+    // Convertendo CustomAttributeValue para uma lista de mapas
+    List<Map<String, dynamic>> customAttributes = worklogEntry.customAttributeValues
+            ?.map((attr) => {'customAttributeID': attr.customAttributeID, 'worklogDate': attr.worklogDate?.toIso8601String() ?? '', 'value': attr.value})
+            .toList() ??
+        [];
+
+    // Preparando o corpo da requisição
+    Map<String, dynamic> requestBody = {worklogId.toString(): customAttributes};
+
+    Completer<dynamic> completer = Completer();
+
+    Timer(const Duration(seconds: 30), () {
+      if (!completer.isCompleted) {
+        completer.completeError('Timeout error');
+      }
+    });
+
+    try {
+      String url = '${_apiUrl}rest/aio-jr/1.0/timesheet/saveCustomAttributeValuesForWorklog';
+
+      // Choose method based on whether it's an add or update
+      var response = await client.post(Uri.parse(url), headers: headers, body: jsonEncode(requestBody));
+
+      if (response.statusCode == 400) {
+        completer.completeError('Failed: Input is invalid');
+      } else if (response.statusCode == 401) {
+        completer.completeError('Failed: Invalid or expired API key');
+      } else if (response.statusCode == 403) {
+        completer.completeError('Failed: User does not have permission to add the custom attributes');
+      } else if (response.statusCode != 201 && response.statusCode != 200) {
+        completer.completeError('Failed: (${response.statusCode})\n${response.body}');
+      } else {
+        completer.complete(jsonDecode(response.body));
+      }
+    } catch (e) {
+      completer.completeError('Error: ${e.toString()}');
+    }
+
+    return completer.future;
+  }
+
   Future<void> deleteWorklogEntry({
     required String issueKey,
     required int worklogId,

@@ -41,8 +41,6 @@ class TimesheetApiClient {
     try {
       var response = await _fetchMyTimesheetInfo();
       var myTimesheetInfo = _parseTimesheetInfo(response);
-      debugPrint("myTimesheetInfo");
-      debugPrint(myTimesheetInfo.toString());
       return myTimesheetInfo;
     } catch (e) {
       throw Exception(e);

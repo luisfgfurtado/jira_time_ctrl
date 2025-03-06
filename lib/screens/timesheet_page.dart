@@ -136,7 +136,6 @@ class TimesheetPageState extends State<TimesheetPage> {
   }
 
   Future<void> _loadMyTimeSheetInfo() async {
-    debugPrint("loadMyTimeSheetInfo");
     try {
       MyTimesheetInfo myTimesheetInfo = await _timesheetApiClient.getMyTimesheetInfo();
       setState(() {
@@ -407,7 +406,6 @@ class TimesheetPageState extends State<TimesheetPage> {
                               side: BorderSide.none,
                               padding: EdgeInsets.zero,
                               onDeleted: () => setState(() {
-                                debugPrint('index=$index');
                                 _timesheetAddedIssuesList.removeAt(index);
                                 _saveSettings();
                                 _fullReloadIssues();
