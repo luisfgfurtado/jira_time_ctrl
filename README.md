@@ -24,6 +24,16 @@ The Jira Worklog Manager is a specialized app designed to streamline the process
 
 Jira Worklog Manager is designed to be a powerful companion for anyone looking to optimize their time management and reporting within the Jira ecosystem. It simplifies the often complex task of worklog tracking, offering clarity and control over your time and project progress.
 
+## Enhanced Custom Attributes Support
+
+The Jira Worklog Manager now includes support for Custom Attributes from the AIO Time Sheet API, allowing for even more detailed time tracking and reporting:
+
+- **Custom Attributes Integration:** Seamlessly integrate custom attributes into your worklogs. This feature allows for the addition of detailed metadata to each worklog entry, enhancing the granularity and specificity of time tracking data.
+
+- **Automated Attribute Sync:** Automatically synchronize custom attributes with your Jira instance. This ensures that all custom attribute data remains up-to-date and consistent with Jira configurations, providing a unified view of project details and timelines.
+
+These enhancements make the Jira Worklog Manager an even more powerful tool for organizations using the AIO Time Sheet API to manage complex projects and detailed reporting requirements.
+
 ## Get Started: Downloading and Using the Windows Application
 
 To begin using the Timesheet Application for Jira, download the application from the releases page.

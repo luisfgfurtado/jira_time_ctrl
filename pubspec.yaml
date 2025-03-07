@@ -98,7 +98,7 @@ msix_config:
   display_name: Jira Time Control
   publisher_display_name: Luis Furtado
   identity_name: luisfurtado.jiratimectrl
-  msix_version: 1.0.0.5
+  msix_version: 1.0.9.0
   languages: en-us
   logo_path: windows\runner\resources\logo.png
   capabilities: internetClient
