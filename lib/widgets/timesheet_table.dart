@@ -230,17 +230,20 @@ class _TimesheetTableState extends State<TimesheetTable> {
     var action = result == null ? 'cancel' : result['action'] ?? 'cancel';
     if (action == 'add') {
       setState(() {
-        issue.fields.worklog.worklogs.add(WorklogEntry.fromMap(result['result']));
+        WorklogEntry worklogEntry = WorklogEntry.fromMap(result['wlEntryResult']);
+        worklogEntry.customAttributeValues = result['customAttributeValues'];
+        issue.fields.worklog.worklogs.add(worklogEntry);
       });
     } else if (action == 'save') {
-      WorklogEntry worklogEntry = WorklogEntry.fromMap(result['result']);
+      WorklogEntry worklogEntry = WorklogEntry.fromMap(result['wlEntryResult']);
+      worklogEntry.customAttributeValues = result['customAttributeValues'];
       setState(() {
         //replace worklog entry
         replaceWorklogEntry(issue.fields.worklog, worklogEntry);
       });
     } else if (action == 'delete') {
       setState(() {
-        removeWorklogEntry(issue.fields.worklog, result['result']);
+        removeWorklogEntry(issue.fields.worklog, result['wlEntryResult']);
       });
     }
   }
