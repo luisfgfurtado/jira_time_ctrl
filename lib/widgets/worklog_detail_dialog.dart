@@ -142,6 +142,8 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
       _remainingOption = 'auto';
       _timeSpentController.text = getSpentTimeFormatted(_worklogEntry.timeSpentSeconds);
       _startTimeController.text = formatTimeOfDay(_worklogEntry.started);
+      _initializeCheckboxValues();
+      _initializeDropdownControllers();
     });
   }
 

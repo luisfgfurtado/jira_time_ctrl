@@ -39,7 +39,7 @@ class _TimesheetTableState extends State<TimesheetTable> {
   bool _todaysWeek = true;
   bool _isLoading = false;
   final _colKeyWidth = 100.0;
-  final _colDataWidth = 70.0;
+  final _colDataWidth = 75.0;
   late Map<String, int> _totalWorklog;
 
   @override
