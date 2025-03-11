@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Jira Time Control"
-#define MyAppVersion "1.7"
+#define MyAppVersion "1.9"
 #define MyAppPublisher "Luis Furtado"
 #define MyAppURL "https://github.com/luisfgfurtado/jira_time_ctrl"
 #define MyAppExeName "jira_time_ctrl.exe"
@@ -34,13 +34,13 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "D:\Jira\jira_time_ctrl\build\windows\x64\runner\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\Jira\jira_time_ctrl\build\windows\x64\runner\Release\flutter_windows.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\Jira\jira_time_ctrl\build\windows\x64\runner\Release\jira_time_ctrl.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\Jira\jira_time_ctrl\build\windows\x64\runner\Release\screen_retriever_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\Jira\jira_time_ctrl\build\windows\x64\runner\Release\url_launcher_windows_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\Jira\jira_time_ctrl\build\windows\x64\runner\Release\window_manager_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\Jira\jira_time_ctrl\build\windows\x64\runner\Release\data\*"; DestDir: "{app}\data"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Users\luis.furtado\Documents\Projects\Flutter Jira TimeEntry App\jira_time_ctrl\build\windows\x64\runner\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\luis.furtado\Documents\Projects\Flutter Jira TimeEntry App\jira_time_ctrl\build\windows\x64\runner\Release\flutter_windows.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\luis.furtado\Documents\Projects\Flutter Jira TimeEntry App\jira_time_ctrl\build\windows\x64\runner\Release\jira_time_ctrl.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\luis.furtado\Documents\Projects\Flutter Jira TimeEntry App\jira_time_ctrl\build\windows\x64\runner\Release\screen_retriever_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\luis.furtado\Documents\Projects\Flutter Jira TimeEntry App\jira_time_ctrl\build\windows\x64\runner\Release\url_launcher_windows_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\luis.furtado\Documents\Projects\Flutter Jira TimeEntry App\jira_time_ctrl\build\windows\x64\runner\Release\window_manager_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\luis.furtado\Documents\Projects\Flutter Jira TimeEntry App\jira_time_ctrl\build\windows\x64\runner\Release\data\*"; DestDir: "{app}\data"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

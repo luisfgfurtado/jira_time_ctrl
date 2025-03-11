@@ -36,6 +36,7 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
   final MaskTextInputFormatter _timeFormatter = MaskTextInputFormatter(mask: '##:##');
   final _timeSpentController = TextEditingController();
   final _startTimeController = TextEditingController();
+  final _descriptionController = TextEditingController();
   Map<String, TextEditingController> controllers = {};
   Map<String, bool> _checkboxValues = {};
   final FocusNode _timeSpentFocusNode = FocusNode();
@@ -43,6 +44,7 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
   late WorklogEntry _worklogEntry;
   late String _remainingEstimate;
   late String _remainingOption;
+  late String _description;
   bool _isNewWorklogEntry = true;
   List<String> _commentHistory = [];
   int _stdHoursDay = 8;
@@ -77,6 +79,7 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
     _startTimeController.dispose();
     _timeSpentFocusNode.dispose();
     _startTimeFocusNode.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -140,6 +143,7 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
       _isNewWorklogEntry = true;
       _remainingEstimate = '00:00';
       _remainingOption = 'auto';
+      _description = '';
       _timeSpentController.text = getSpentTimeFormatted(_worklogEntry.timeSpentSeconds);
       _startTimeController.text = formatTimeOfDay(_worklogEntry.started);
       _initializeCheckboxValues();
@@ -299,30 +303,31 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
       }
 
       // Add the worklog comment to local comment history, to be used in future worklogs
-      if (!_commentHistory.contains(_worklogEntry.comment)) {
-        _commentHistory.add(_worklogEntry.comment);
+      if (!_commentHistory.contains(_description)) {
+        _commentHistory.add(_description);
         if (_commentHistory.length > 5) _commentHistory.removeAt(0); // Remove the oldest entry
       }
       _saveSettings();
       try {
         //update worklog
-        dynamic result = await widget.jiraApiClient.upInsertWorklogEntry(
+        _worklogEntry.comment = _description;
+        dynamic wlEntryResult = await widget.jiraApiClient.upInsertWorklogEntry(
           worklogEntry: _worklogEntry,
           adjustEstimate: _remainingOption,
           newEstimate: _remainingEstimate,
         );
         //update custom attributes
-        if (_worklogEntry.customAttributeValues!.isNotEmpty && result['id'] != null) {
-          await widget.jiraApiClient.upInsertWorklogCustomAttributes(worklogEntry: _worklogEntry, worklogId: int.parse(result['id']));
+        if (_worklogEntry.customAttributeValues!.isNotEmpty && wlEntryResult['id'] != null) {
+          await widget.jiraApiClient.upInsertWorklogCustomAttributes(worklogEntry: _worklogEntry, worklogId: int.parse(wlEntryResult['id']));
         }
 
         if (!mounted) return; // check ensures widget is still present in the widget tree
         // Pass the updated issue object when popping the screen
         if (_worklogEntry.id == 0) {
           //add new
-          Navigator.of(context).pop({'action': 'add', 'result': result});
+          Navigator.of(context).pop({'action': 'add', 'wlEntryResult': wlEntryResult, 'customAttributeValues': _worklogEntry.customAttributeValues});
         } else {
-          Navigator.of(context).pop({'action': 'save', 'result': result});
+          Navigator.of(context).pop({'action': 'save', 'wlEntryResult': wlEntryResult, 'customAttributeValues': _worklogEntry.customAttributeValues});
         }
       } catch (e) {
         if (_worklogEntry.id != 0) {
@@ -387,7 +392,7 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
           if (attr.type == "List") {
             controllers[attr.key]?.text = customValue.value.toString();
           } else if (attr.type == "Checkbox") {
-            _checkboxValues[attr.key] = bool.parse(customValue.value);
+            _checkboxValues[attr.key] = customValue.value is String ? bool.parse(customValue.value) : customValue.value;
           }
         }
       }
@@ -398,6 +403,7 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
       _isNewWorklogEntry = false;
       _timeSpentController.text = getSpentTimeFormatted(_worklogEntry.timeSpentSeconds);
       _startTimeController.text = formatTimeOfDay(_worklogEntry.started);
+      _descriptionController.text = _worklogEntry.comment;
     });
   }
 
@@ -629,11 +635,11 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
                   hintText: 'Comments',
                   labelText: 'Description',
                 ),
-                controller: TextEditingController(text: _worklogEntry.comment),
+                controller: _descriptionController,
                 keyboardType: TextInputType.multiline,
                 minLines: 2,
                 maxLines: 5,
-                onSaved: (value) => _worklogEntry.comment = value!,
+                onSaved: (value) => _description = value!,
               ),
             ),
             // Overlay the button on top
@@ -658,7 +664,7 @@ class WorklogDetailDialogState extends State<WorklogDetailDialog> {
                               return OutlinedButton(
                                 onPressed: () {
                                   setState(() {
-                                    _worklogEntry.comment = comment;
+                                    _description = comment;
                                   });
                                   Navigator.pop(context); // Close the bottom sheet
                                 },

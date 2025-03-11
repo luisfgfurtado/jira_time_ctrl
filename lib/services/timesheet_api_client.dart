@@ -36,10 +36,10 @@ class TimesheetApiClient {
     }
   }
 
-  Future<MyTimesheetInfo> getMyTimesheetInfo() async {
+  Future<MyTimesheetInfo> getMyTimesheetInfo(String startDate, String endDate) async {
     debugPrint("TimesheetApiClient - getMyTimesheetInfo");
     try {
-      var response = await _fetchMyTimesheetInfo();
+      var response = await _fetchMyTimesheetInfo(startDate, endDate);
       var myTimesheetInfo = _parseTimesheetInfo(response);
       return myTimesheetInfo;
     } catch (e) {
@@ -47,7 +47,7 @@ class TimesheetApiClient {
     }
   }
 
-  Future<dynamic> _fetchMyTimesheetInfo() async {
+  Future<dynamic> _fetchMyTimesheetInfo(String startDate, String endDate) async {
     debugPrint("TimesheetApiClient - _fetchMyTimesheetInfo");
     var client = http.Client();
     if (_apiUrl.isEmpty) throw 'Failed: Invalid Jira API URL';
@@ -76,8 +76,8 @@ class TimesheetApiClient {
             "outputType": "list",
             "days": 0,
             "dateRange": null,
-            "startDate": null,
-            "endDate": null,
+            "startDate": startDate,
+            "endDate": endDate,
             "includeNoTimeUser": false,
             "includeNPT": true
           }

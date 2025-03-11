@@ -135,9 +135,9 @@ class TimesheetPageState extends State<TimesheetPage> {
     }
   }
 
-  Future<void> _loadMyTimeSheetInfo() async {
+  Future<void> _loadMyTimeSheetInfo(String startDate, String endDate) async {
     try {
-      MyTimesheetInfo myTimesheetInfo = await _timesheetApiClient.getMyTimesheetInfo();
+      MyTimesheetInfo myTimesheetInfo = await _timesheetApiClient.getMyTimesheetInfo(startDate, endDate);
       setState(() {
         _myTimesheetInfo = myTimesheetInfo;
       });
@@ -152,7 +152,7 @@ class TimesheetPageState extends State<TimesheetPage> {
     debugPrint("fullReloadIssues");
     if (_startDate == '' || _endDate == '') return;
     setState(() => _isLoading = true); // Set loading to true
-    await _loadMyTimeSheetInfo();
+    await _loadMyTimeSheetInfo(_startDate, _endDate);
     await _loadTempoWorklogIssues();
     await loadIssues(_startDate, _endDate);
 
@@ -211,6 +211,14 @@ class TimesheetPageState extends State<TimesheetPage> {
           return a.key.compareTo(b.key);
         }
       });
+
+      //load custom attributes
+      await _loadMyTimeSheetInfo(startDate, endDate);
+      // Verifica se existem customAttributeValues e se a lista tem elementos
+      if (_myTimesheetInfo.customAttributeValues.isNotEmpty) {
+        addIssuesCustomAttributeValues(_issues, _myTimesheetInfo.customAttributeValues);
+      }
+
       setState(() {
         _startDate = startDate;
         _endDate = endDate;
